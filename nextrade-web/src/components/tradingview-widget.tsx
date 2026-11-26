@@ -33,7 +33,7 @@ const globalBenchmarks = [
   { s: "NASDAQ:MSFT", d: "Microsoft (USD)" },
 ];
 
-function configFor(kind: WidgetKind, symbol?: string) {
+function configFor(kind: WidgetKind, symbol?: string, interval?: string) {
   if (kind === "ticker-tape") {
     return {
       symbols: indianEquities.map(({ s, d }) => ({ proName: s, title: d })),
@@ -56,7 +56,7 @@ function configFor(kind: WidgetKind, symbol?: string) {
       width: "100%",
       height: "100%",
       tabs: [
-        { title: "Indian Equities (INR)", symbols: indianEquities.slice(1) },
+        { title: "Indian Equities (INR)", symbols: indianEquities.slice(1, 4) },
         { title: "Indian Indices", symbols: indianIndices },
         { title: "Global Benchmarks (USD)", symbols: globalBenchmarks },
       ],
@@ -76,7 +76,7 @@ function configFor(kind: WidgetKind, symbol?: string) {
   return {
     autosize: true,
     symbol: symbol ?? "BSE:RELIANCE",
-    interval: "D",
+    interval: interval ?? "D",
     timezone: "Asia/Kolkata",
     theme: "light",
     style: "1",
@@ -93,11 +93,13 @@ function configFor(kind: WidgetKind, symbol?: string) {
 export function TradingViewWidget({
   kind,
   symbol,
+  interval,
   title,
   note,
 }: {
   kind: WidgetKind;
   symbol?: string;
+  interval?: string;
   title: string;
   note?: string;
 }) {
@@ -120,7 +122,7 @@ export function TradingViewWidget({
     const script = document.createElement("script");
     script.src = scriptByKind[kind];
     script.async = true;
-    script.textContent = JSON.stringify(configFor(kind, symbol));
+    script.textContent = JSON.stringify(configFor(kind, symbol, interval));
     script.onerror = () => {
       setLoadError(true);
       setLoading(false);
@@ -144,7 +146,7 @@ export function TradingViewWidget({
       script.onerror = null;
       target.replaceChildren();
     };
-  }, [kind, symbol]);
+  }, [kind, symbol, interval]);
 
   return (
     <section className={`tv-panel tv-${kind}`} aria-label={title}>

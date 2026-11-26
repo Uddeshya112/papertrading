@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { computeAnalytics, exportJournalToCsv, type EquityPoint } from "@/lib/analytics";
 import { STRATEGY_TAGS, type PaperAccountState } from "@/lib/paper-engine";
 import { REGIME_META } from "@/lib/paper-instruments";
-import { formatINR } from "@/lib/format";
+import { formatINR, plural } from "@/lib/format";
 
 type Props = {
   account: PaperAccountState;
@@ -73,14 +73,14 @@ export function JournalAnalyticsView({
         <div className="surface-card nt-kpi">
           <span className="card-kicker">WIN RATE / PROFIT FACTOR</span>
           <strong>{stats.winRate.toFixed(1)}% · PF {stats.profitFactor}</strong>
-          <small>{stats.wins}W / {stats.losses}L across {stats.totalTrades} trades</small>
+          <small>{stats.wins}W / {stats.losses}L across {plural(stats.totalTrades, "trade")}</small>
         </div>
         <div className="surface-card nt-kpi">
           <span className="card-kicker">MAX DRAWDOWN</span>
           <strong className={stats.maxDrawdownPercent > 10 ? "nt-neg" : ""}>
             {stats.maxDrawdownPercent.toFixed(2)}%
           </strong>
-          <small>₹{stats.maxDrawdownAmount.toLocaleString("en-IN")} peak-to-trough</small>
+          <small>{formatINR(stats.maxDrawdownAmount)} peak-to-trough</small>
         </div>
         <div className="surface-card nt-kpi">
           <span className="card-kicker">GO-LIVE READINESS</span>

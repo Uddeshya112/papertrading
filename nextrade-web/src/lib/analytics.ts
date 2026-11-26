@@ -1,3 +1,4 @@
+import { formatINR } from "./format";
 import type { JournalTrade, PaperAccountState } from "./paper-engine";
 import type { MarketRegime } from "./paper-instruments";
 

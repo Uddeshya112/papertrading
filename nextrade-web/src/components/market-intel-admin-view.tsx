@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ACADEMY_COURSES } from "@/lib/academy-courses";
 import type { PaperAccountState } from "@/lib/paper-engine";
 import { PAPER_INSTRUMENTS, type LiveQuote } from "@/lib/paper-instruments";
+import { plural } from "@/lib/format";
 import { TradingViewWidget } from "./tradingview-widget";
 import { getSupabase } from "@/lib/supabase";
 
@@ -193,7 +194,7 @@ export function MarketIntelAdminView({
             <div className="surface-card nt-kpi">
               <span className="card-kicker">VIRTUAL REFILLS RECORDED</span>
               <strong>{account.resetCount}</strong>
-              <small>{account.journal.length} immutable trades preserved</small>
+              <small>{plural(account.journal.length, "immutable trade")} preserved</small>
             </div>
             <div className="surface-card nt-kpi">
               <span className="card-kicker">ACADEMY CATALOG</span>

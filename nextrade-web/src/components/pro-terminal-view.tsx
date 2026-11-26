@@ -527,14 +527,29 @@ export function ProTerminalView({
               )}
             </div>
           ) : (
-            <div className="nt-tv-box">
-              <TradingViewWidget
-                key={instrument.tradingViewSymbol}
-                kind="advanced-chart"
-                symbol={instrument.tradingViewSymbol}
-                title={`${instrument.symbol} chart`}
-                note="TradingView embeds show exchange-delayed data; order fills execute at the simulator quote above."
-              />
+            <div className={splitLayout ? "nt-split-charts" : ""}>
+              <div className="nt-tv-box">
+                <TradingViewWidget
+                  key={`${instrument.tradingViewSymbol}-primary`}
+                  kind="advanced-chart"
+                  symbol={instrument.tradingViewSymbol}
+                  interval="15"
+                  title={`${instrument.symbol} primary chart`}
+                  note="TradingView embeds show exchange-delayed data; order fills execute at the simulator quote above."
+                />
+              </div>
+              {splitLayout && (
+                <div className="nt-tv-box">
+                  <TradingViewWidget
+                    key={`${instrument.tradingViewSymbol}-secondary-60`}
+                    kind="advanced-chart"
+                    symbol={instrument.tradingViewSymbol}
+                    interval="60"
+                    title={`${instrument.symbol} 1H chart`}
+                    note="Secondary 1H timeframe (TradingView delayed feed)."
+                  />
+                </div>
+              )}
             </div>
           )}
 
