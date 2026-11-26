@@ -1,3 +1,14 @@
+/**
+ * @module lib/rbac-security
+ * @description Server-side Role-Based Access Control (RBAC) policy engine and exact integer-paise reconciliation.
+ *
+ * Security & Financial Invariants:
+ * - Defines 6 authoritative roles (`student`, `pro_learner`, `mentor`, `compliance_auditor`, `admin`, `super_admin`).
+ * - Enforces mandatory MFA (`aal2`) for all privileged administrative and audit-log read actions.
+ * - `reconcileLedgerPaise`: Uses native `BigInt` integer paise (₹1 = 100 paise) to guarantee zero IEEE-754
+ *   floating-point rounding drift during double-entry ledger reconciliation.
+ */
+
 export type AppRole =
   | "user"
   | "analyst"

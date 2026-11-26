@@ -1,5 +1,14 @@
 "use client";
 
+/**
+ * @module app/page
+ * @description Main TradeGuru AI workspace orchestrator.
+ * Coordinates 5-item primary navigation (Simple/Pro modes), URL `?view=` routing with
+ * browser Back/Forward support, live delayed market quote polling (Edge CDN + Visibility API +
+ * jitter), offline-first Supabase cloud sync (debounced + fingerprint-deduplicated), and
+ * lazy-loaded trading/analytics/learning modules wrapped in `WorkspaceErrorBoundary`.
+ */
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { WorkspaceErrorBoundary } from "@/components/workspace-error-boundary";
@@ -85,25 +94,6 @@ type View =
 type Profile = { fullName: string; phone: string; country: string };
 const emptyProfile: Profile = { fullName: "", phone: "", country: "" };
 
-const views: View[] = [
-  "Overview",
-  "Trade Terminal",
-  "AI Teacher",
-  "Academy",
-  "Options Chain",
-  "Basket Orders",
-  "Screener",
-  "Risk Center",
-  "Backtesting Lab",
-  "Portfolio",
-  "Journal & Analytics",
-  "Psychology & Challenges",
-  "Reports Center",
-  "Market Intel & Admin",
-  "Watchlist & Alerts",
-  "Profile",
-  "Settings",
-];
 
 const VIEW_SLUGS: Record<View, string> = {
   Overview: "overview",

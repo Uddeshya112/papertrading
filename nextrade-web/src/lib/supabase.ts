@@ -1,3 +1,13 @@
+/**
+ * @module lib/supabase
+ * @description Dual-mode Supabase browser client supporting both Vercel environment variables and in-app runtime keys.
+ *
+ * Security Guardrails:
+ * - Automatically reads `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` / `ANON_KEY`.
+ * - Allows optional in-app runtime key configuration stored in `localStorage` while explicitly blocking
+ *   privileged `service_role` keys from ever being saved in browser storage.
+ */
+
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 export type RuntimeSupabaseConfig = {

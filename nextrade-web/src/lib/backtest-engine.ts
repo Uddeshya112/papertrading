@@ -1,3 +1,14 @@
+/**
+ * @module lib/backtest-engine
+ * @description No-look-ahead bar-by-bar historical strategy backtester with Walk-Forward & Monte Carlo analysis.
+ *
+ * Algorithmic Guarantees:
+ * - Strict causality (no look-ahead bias): entry/exit signals on bar `i` execute using only bars `0..i`.
+ * - Realistic Indian execution friction: applies configurable slippage (bps) + full Indian round-trip
+ *   statutory charges via `lib/indian-charges.ts`.
+ * - Monte Carlo Simulation: 200-run bootstrap resampling (O(R * T)) to estimate worst-case 95th-percentile drawdown.
+ */
+
 import {
   computeEMA,
   computeRSI,

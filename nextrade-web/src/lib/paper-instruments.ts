@@ -1,3 +1,11 @@
+/**
+ * @module lib/paper-instruments
+ * @description Multi-segment Indian market instrument catalog (NSE/BSE Equities, F&O, MCX, Currency, ETFs)
+ * and stochastic market regime simulator (`BULL`, `SIDEWAYS`, `CORRECTION`, `VOLATILITY`).
+ *
+ * Tick stepping respects segment-specific tick sizes (`roundToTick`) and regime drift/volatility profiles.
+ */
+
 export type MarketSegment =
   | "NSE_EQUITY"
   | "BSE_EQUITY"

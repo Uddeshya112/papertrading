@@ -1,3 +1,8 @@
+/**
+ * @module lib/market-api
+ * @description Typed client wrapper for fetching external or backend market quote snapshots with safe error handling.
+ */
+
 export type Instrument = {
   id: string;
   symbol: string;

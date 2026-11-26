@@ -1,3 +1,15 @@
+/**
+ * @module lib/market-provider
+ * @description Market data provider abstractions, circuit-breaker state machine, and shared telemetry counters.
+ *
+ * Resilience Patterns:
+ * - `MarketDataProvider` & `BrokerWebSocketAdapter`: Decouples UI/simulator from upstream feed vendors
+ *   so licensed real-time Indian broker WebSockets (e.g., Kite/Dhan/Upstox) can be plugged in cleanly.
+ * - Circuit Breaker: Opens for 60s after 3 consecutive upstream failures to protect latency and trigger
+ *   graceful fallback to the local simulator.
+ * - `computeBackoffDelayMs`: Capped exponential backoff with jitter for reconnect and sync retries.
+ */
+
 export type FeedMode = "LIVE" | "DELAYED" | "SIMULATED";
 
 export type ProviderQuote = {

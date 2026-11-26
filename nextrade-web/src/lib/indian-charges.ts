@@ -1,3 +1,15 @@
+/**
+ * @module lib/indian-charges
+ * @description Statutory Indian market transaction cost, breakeven, position-sizing, and tax-classification engine.
+ *
+ * Domain Rules Implemented:
+ * - Supports both ₹0 Zero Brokerage and ₹20/order Discount Broker plans across NSE/BSE Equity (MIS/CNC),
+ *   NSE F&O (Futures/Options), MCX Commodities (CTT), and NSE Currency segments.
+ * - Computes STT/CTT, Exchange transaction charges, SEBI turnover fees, Maharashtra-standard Stamp Duty
+ *   (buy side), and 18% GST on (Brokerage + Exchange + SEBI).
+ * - `calculatePositionSize`: Enforces risk-per-trade capital sizing (e.g., 1% rule) net of charges.
+ */
+
 import type { MarketSegment } from "./paper-instruments";
 
 export type ProductType = "INTRADAY" | "DELIVERY" | "NRML";

@@ -1,3 +1,9 @@
+/**
+ * @module lib/report-center
+ * @description Downloadable trading report generator supporting 12 report types across Print/PDF HTML, CSV, and Excel (.xls).
+ * Combines live analytics (`lib/analytics.ts`), AI Teacher diagnostics (`lib/teacher-coach.ts`), and immutable trade history.
+ */
+
 import { computeAnalytics, exportJournalToCsv } from "./analytics";
 import { ACADEMY_COURSES } from "./academy-courses";
 import type { PaperAccountState } from "./paper-engine";

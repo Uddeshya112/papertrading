@@ -1,3 +1,14 @@
+/**
+ * @module lib/paper-engine
+ * @description Core simulated Indian paper trading execution engine (default ₹10,00,000 virtual capital).
+ *
+ * Supported Order Lifecycle:
+ * - Order types: MARKET, LIMIT, AUTO-LIMIT (offset % + wait window), SL, SL-M, BRACKET (OCO SL+Target), COVER.
+ * - Product modes: Intraday (MIS), Delivery (CNC), Derivatives Margin (NRML) with DAY & GTC validity.
+ * - Risk & Integrity: Enforces buying power, short-selling rules, partial fills, immutable audit/journal history,
+ *   and safe automatic/manual ₹10,00,000 refills that resolve open exposure without ever deleting past records.
+ */
+
 import {
   calculateIndianCharges,
   calculateRoundTripCharges,

@@ -1,3 +1,14 @@
+/**
+ * @module lib/teacher-coach
+ * @description AI Trading Teacher & behavioral coaching engine detecting 16 trading mistakes with 8-point pedagogy.
+ *
+ * Pedagogical Design:
+ * - Never equates a losing trade with a bad trade: explicitly credits "Good Process Losses" where the trader
+ *   followed stop-loss and position-sizing rules.
+ * - Returns an explicit `"Unrated"` state when `journal.length === 0` so new accounts never see arbitrary grades.
+ * - Evaluates live pre-trade guardrails (`evaluatePreTradeMistakes`) before order submission.
+ */
+
 import { computeAnalytics } from "./analytics";
 import { formatINR, plural } from "./format";
 import type { EmotionTag, OrderSide, OrderType, PaperAccountState } from "./paper-engine";

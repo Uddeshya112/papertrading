@@ -1,3 +1,14 @@
+/**
+ * @module lib/academy-courses
+ * @description 28-course bilingual (English & Hindi / Devanagari) Trading Academy catalog.
+ * Organizes structured chapters from beginner market mechanics to derivatives, risk management,
+ * and trading psychology, complete with chapter quizzes for mastery verification.
+ *
+ * Interactions:
+ * - Consumed by `components/academy-view.tsx` for bilingual course rendering and quiz evaluation.
+ * - Progress (`completedCourseIds`) is persisted in `PaperAccountState` and synced via `lib/cloud-sync.ts`.
+ */
+
 export type CourseTier = "Beginner" | "Intermediate" | "Technical & Risk" | "Advanced";
 
 export type AcademyQuizItem = {

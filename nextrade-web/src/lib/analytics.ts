@@ -1,3 +1,17 @@
+/**
+ * @module lib/analytics
+ * @description Portfolio analytics, mathematical expectancy, drawdown, and Go-Live readiness engine.
+ *
+ * Core Algorithms:
+ * - Expectancy: `(WinRate * AvgWin) - (LossRate * AvgLoss)` net of Indian statutory charges.
+ * - Peak-to-Trough Drawdown: Single-pass O(N) equity-curve scan tracking running high-water mark.
+ * - Go-Live Readiness: Multi-criterion checklist (50+ trades, positive net expectancy, <=10% drawdown,
+ *   multi-regime stress testing, and stop-loss discipline).
+ *
+ * Interactions: Consumed by `journal-analytics-view.tsx`, `teacher-coach.ts`, `risk-center-view.tsx`,
+ * and `report-center.ts`.
+ */
+
 import { formatINR } from "./format";
 import type { JournalTrade, PaperAccountState } from "./paper-engine";
 import type { MarketRegime } from "./paper-instruments";

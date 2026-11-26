@@ -1,3 +1,15 @@
+/**
+ * @module lib/cloud-sync
+ * @description Offline-first Supabase cloud synchronization queue with exponential backoff and idempotency.
+ *
+ * Reliability Design:
+ * - LocalStorage acts as immediate write-ahead persistence so zero user actions block on network latency.
+ * - Failed cloud upserts queue into `tradeguru_pending_sync_v1` and retry with bounded exponential backoff
+ *   when connectivity returns (`online` event in `app/page.tsx`).
+ * - Syncs both account snapshot (`tradeguru_accounts`) and normalized tables (`profiles`, `learning_progress`,
+ *   `tradeguru_journal_trades`, `tradeguru_refill_history`).
+ */
+
 import { computeBackoffDelayMs } from "./market-provider";
 import type { PaperAccountState } from "./paper-engine";
 import { getSupabase } from "./supabase";

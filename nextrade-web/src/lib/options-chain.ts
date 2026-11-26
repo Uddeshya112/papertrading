@@ -1,3 +1,11 @@
+/**
+ * @module lib/options-chain
+ * @description Simulated Indian index Options Chain generator (NIFTY & BANK NIFTY) with Greeks and PCR analytics.
+ *
+ * Computes Calls & Puts across ATM +/- strike ladders with Open Interest (OI), Volume, Implied Volatility (IV),
+ * Bid/Ask spreads, ITM highlighting, and both Full-Chain and Nearby-Strike Put-Call Ratios (PCR).
+ */
+
 import { roundToTick, type LiveQuote } from "./paper-instruments";
 
 export type ChainUnderlying = "NIFTY" | "BANKNIFTY";
