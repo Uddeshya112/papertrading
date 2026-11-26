@@ -8,6 +8,7 @@ import {
   type MarketSegment,
 } from "@/lib/paper-instruments";
 import type { OrderSide, PaperAccountState } from "@/lib/paper-engine";
+import { formatINR, plural } from "@/lib/format";
 
 export type BasketLegDraft = {
   instrumentId: string;
@@ -184,7 +185,7 @@ export function BasketOrdersView({
                   onUpdateStagedLegs(preset.legs);
                 }}
               >
-                Load into Basket ({preset.legs.length} legs)
+                Load into Basket ({plural(preset.legs.length, "leg")})
               </button>
             </div>
           ))}
@@ -240,17 +241,17 @@ export function BasketOrdersView({
               ))}
             </select>
           </label>
-          <label>
+          <label style={{ minWidth: 152 }}>
             Side &amp; Lots
-            <div className="nt-inline-actions">
-              <select value={newSide} onChange={(e) => setNewSide(e.target.value as OrderSide)}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap" }}>
+              <select style={{ minWidth: 74 }} value={newSide} onChange={(e) => setNewSide(e.target.value as OrderSide)}>
                 <option value="BUY">BUY</option>
                 <option value="SELL">SELL</option>
               </select>
               <input
                 type="number"
                 min={1}
-                style={{ width: 70 }}
+                style={{ width: 68, flexShrink: 0 }}
                 value={newLots}
                 onChange={(e) => setNewLots(Math.max(1, Number(e.target.value) || 1))}
               />
@@ -370,7 +371,7 @@ export function BasketOrdersView({
                   })
                 }
               >
-                Execute Entire Basket ({stagedLegs.length} legs · {mode} Mode)
+                Execute Entire Basket ({plural(stagedLegs.length, "leg")} · {mode} Mode)
               </button>
               <button type="button" className="nt-pill" onClick={() => onUpdateStagedLegs([])}>
                 Clear Basket
@@ -401,14 +402,14 @@ export function BasketOrdersView({
                   <span className="nt-check-dot">B</span>
                   <div>
                     <strong>
-                      {b.name} ({b.legs.length} legs){b.hedgeBenefitApplied ? " · Hedged" : ""}
+                      {b.name} ({plural(b.legs.length, "leg")}){b.hedgeBenefitApplied ? " · Hedged" : ""}
                     </strong>
                     <p>
                       Margin ₹{b.marginBlocked.toLocaleString("en-IN")} · Basket Target +₹{b.basketTarget} / SL −₹{b.basketStopLoss}
                     </p>
                   </div>
                   <strong className={livePnl >= 0 ? "nt-pos" : "nt-neg"} style={{ marginLeft: "auto", marginRight: 10 }}>
-                    {livePnl >= 0 ? "+" : ""}₹{livePnl.toFixed(2)}
+                    {formatINR(livePnl, { signed: true })}
                   </strong>
                   <button type="button" className="nt-pill danger" onClick={() => onExitIsoBasket(b.id)}>
                     Exit Basket

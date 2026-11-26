@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { computeAnalytics, exportJournalToCsv, type EquityPoint } from "@/lib/analytics";
 import { STRATEGY_TAGS, type PaperAccountState } from "@/lib/paper-engine";
 import { REGIME_META } from "@/lib/paper-instruments";
+import { formatINR } from "@/lib/format";
 
 type Props = {
   account: PaperAccountState;
@@ -65,7 +66,7 @@ export function JournalAnalyticsView({
         <div className="surface-card nt-kpi">
           <span className="card-kicker">EXPECTANCY PER TRADE</span>
           <strong className={stats.expectancyPerTrade >= 0 ? "nt-pos" : "nt-neg"}>
-            {stats.expectancyPerTrade >= 0 ? "+" : ""}₹{stats.expectancyPerTrade.toLocaleString("en-IN")}
+            {formatINR(stats.expectancyPerTrade, { signed: true })}
           </strong>
           <small>(Win% × AvgWin) − (Loss% × AvgLoss)</small>
         </div>
@@ -102,9 +103,9 @@ export function JournalAnalyticsView({
           </div>
           <EquityCurveChart points={stats.equityCurve} startingCapital={account.startingCapital} />
           <div className="nt-cost-preview" style={{ marginTop: 12 }}>
-            <div><span>Gross P&amp;L</span><strong>₹{stats.grossPnl.toLocaleString("en-IN")}</strong></div>
-            <div><span>Simulated Indian Charges</span><strong>−₹{stats.totalCharges.toLocaleString("en-IN")}</strong></div>
-            <div><span>Net P&amp;L ({stats.returnPercent}%)</span><strong className={stats.netPnl >= 0 ? "nt-pos" : "nt-neg"}>₹{stats.netPnl.toLocaleString("en-IN")}</strong></div>
+            <div><span>Gross P&amp;L</span><strong>{formatINR(stats.grossPnl, { signed: true })}</strong></div>
+            <div><span>Simulated Indian Charges</span><strong>{formatINR(-Math.abs(stats.totalCharges))}</strong></div>
+            <div><span>Net P&amp;L ({stats.returnPercent}%)</span><strong className={stats.netPnl >= 0 ? "nt-pos" : "nt-neg"}>{formatINR(stats.netPnl, { signed: true })}</strong></div>
           </div>
         </section>
 
@@ -188,10 +189,10 @@ export function JournalAnalyticsView({
                     <th scope="row"><strong>{d.date}</strong></th>
                     <td>{d.trades}</td>
                     <td>{((d.wins / d.trades) * 100).toFixed(0)}%</td>
-                    <td>₹{d.gross.toFixed(2)}</td>
-                    <td>−₹{d.charges.toFixed(2)}</td>
+                    <td>{formatINR(d.gross, { signed: true })}</td>
+                    <td>{formatINR(-Math.abs(d.charges))}</td>
                     <td className={d.net >= 0 ? "nt-pos" : "nt-neg"}>
-                      <strong>{d.net >= 0 ? "+" : ""}₹{d.net.toFixed(2)}</strong>
+                      <strong>{formatINR(d.net, { signed: true })}</strong>
                     </td>
                   </tr>
                 ))}
@@ -227,8 +228,8 @@ export function JournalAnalyticsView({
                     <th scope="row"><strong>{row.strategy}</strong></th>
                     <td>{row.trades}</td>
                     <td>{row.winRate.toFixed(1)}%</td>
-                    <td className={row.expectancy >= 0 ? "nt-pos" : "nt-neg"}>₹{row.expectancy.toFixed(2)}</td>
-                    <td className={row.netPnl >= 0 ? "nt-pos" : "nt-neg"}><strong>₹{row.netPnl.toFixed(2)}</strong></td>
+                    <td className={row.expectancy >= 0 ? "nt-pos" : "nt-neg"}>{formatINR(row.expectancy, { signed: true })}</td>
+                    <td className={row.netPnl >= 0 ? "nt-pos" : "nt-neg"}><strong>{formatINR(row.netPnl, { signed: true })}</strong></td>
                   </tr>
                 ))}
               </tbody>
@@ -301,9 +302,9 @@ export function JournalAnalyticsView({
                       <small>{REGIME_META[t.regime].label}</small>
                     </td>
                     <td><span className="source-tag">{t.emotion}</span></td>
-                    <td>₹{t.grossPnl.toFixed(2)}<small>−₹{t.charges.toFixed(2)}</small></td>
+                    <td>{formatINR(t.grossPnl, { signed: true })}<small>{formatINR(-Math.abs(t.charges))}</small></td>
                     <td className={t.netPnl >= 0 ? "nt-pos" : "nt-neg"}>
-                      <strong>{t.netPnl >= 0 ? "+" : ""}₹{t.netPnl.toFixed(2)}</strong>
+                      <strong>{formatINR(t.netPnl, { signed: true })}</strong>
                     </td>
                     <td>
                       <input

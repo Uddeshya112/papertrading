@@ -7,6 +7,8 @@ import type { User } from "@supabase/supabase-js";
 import { authRedirect, clearSupabaseConfig, getSavedSupabaseConfig, getSupabase, isSupabaseConfigured, saveSupabaseConfig } from "@/lib/supabase";
 import { flushPendingSyncIfDue, pullAccountFromCloud, pushAccountToCloud, type CloudSyncStatus } from "@/lib/cloud-sync";
 import { TradingViewWidget } from "@/components/tradingview-widget";
+import { NavIcon } from "@/components/nav-icons";
+import { formatINR, plural } from "@/lib/format";
 const ProTerminalView = dynamic(() => import("@/components/pro-terminal-view").then(m => m.ProTerminalView), { loading: () => <ViewSkeleton /> });
 const PortfolioView = dynamic(() => import("@/components/portfolio-view").then(m => m.PortfolioView), { loading: () => <ViewSkeleton /> });
 const JournalAnalyticsView = dynamic(() => import("@/components/journal-analytics-view").then(m => m.JournalAnalyticsView), { loading: () => <ViewSkeleton /> });
@@ -102,25 +104,29 @@ const views: View[] = [
   "Settings",
 ];
 
-const icons: Record<View, string> = {
-  Overview: "⌂",
-  "Trade Terminal": "⇄",
-  "AI Teacher": "✦",
-  Academy: "◈",
-  "Options Chain": "⛓",
-  "Basket Orders": "◫",
-  Screener: "⌕",
-  "Risk Center": "⊞",
-  "Backtesting Lab": "∿",
-  Portfolio: "▤",
-  "Journal & Analytics": "◩",
-  "Psychology & Challenges": "★",
-  "Reports Center": "⎙",
-  "Market Intel & Admin": "⌁",
-  "Watchlist & Alerts": "☆",
-  Profile: "◉",
-  Settings: "⚙",
+const VIEW_SLUGS: Record<View, string> = {
+  Overview: "overview",
+  "Trade Terminal": "terminal",
+  "AI Teacher": "ai-teacher",
+  Academy: "academy",
+  "Options Chain": "options",
+  "Basket Orders": "baskets",
+  Screener: "screener",
+  "Risk Center": "risk",
+  "Backtesting Lab": "backtest",
+  Portfolio: "portfolio",
+  "Journal & Analytics": "journal",
+  "Psychology & Challenges": "psychology",
+  "Reports Center": "reports",
+  "Market Intel & Admin": "admin",
+  "Watchlist & Alerts": "watchlist",
+  Profile: "profile",
+  Settings: "settings",
 };
+
+const SLUG_TO_VIEW: Record<string, View> = Object.fromEntries(
+  (Object.entries(VIEW_SLUGS) as [View, string][]).map(([v, slug]) => [slug, v])
+) as Record<string, View>;
 
 const descriptions: Record<View, string> = {
   Overview: "100% Free TradeGuru AI — ₹10,00,000 virtual capital, AI Teacher coaching, and live market observation.",
@@ -165,6 +171,7 @@ export default function Home() {
   const [supaUrlInput, setSupaUrlInput] = useState("");
   const [supaKeyInput, setSupaKeyInput] = useState("");
   const [supaConnected, setSupaConnected] = useState(false);
+  const [hasSavedSupaKeys, setHasSavedSupaKeys] = useState(false);
   const [password, setPassword] = useState("");
   const [registering, setRegistering] = useState(false);
   const [verificationRequired, setVerificationRequired] = useState(false);
@@ -189,11 +196,48 @@ export default function Home() {
   const [stagedBasketLegs, setStagedBasketLegs] = useState<BasketLegDraft[]>([]);
   const [isoBaskets, setIsoBaskets] = useState<ExecutedIsoBasket[]>([]);
 
+  // Sync activeView with ?view=<slug> URL parameter and browser Back/Forward buttons
+  function navigateView(nextView: View) {
+    setActiveView(nextView);
+    if (typeof window !== "undefined") {
+      const slug = VIEW_SLUGS[nextView];
+      const nextUrl = slug === "overview" ? window.location.pathname : `${window.location.pathname}?view=${slug}`;
+      if (window.location.pathname + window.location.search !== nextUrl) {
+        window.history.pushState({ view: nextView }, "", nextUrl);
+      }
+    }
+  }
+
+  useEffect(() => {
+    const readViewFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      const slug = params.get("view");
+      if (slug && SLUG_TO_VIEW[slug]) {
+        setActiveView(SLUG_TO_VIEW[slug]);
+      } else {
+        setActiveView("Overview");
+      }
+    };
+    readViewFromUrl();
+    window.addEventListener("popstate", readViewFromUrl);
+    return () => window.removeEventListener("popstate", readViewFromUrl);
+  }, []);
+
+  // Auto-dismiss status toasts after 4 seconds
+  useEffect(() => {
+    if (!notice) return;
+    const t = window.setTimeout(() => setNotice(""), 4000);
+    return () => window.clearTimeout(t);
+  }, [notice]);
+
   useEffect(() => {
     const saved = getSavedSupabaseConfig();
     if (saved) {
       setSupaUrlInput(saved.url);
       setSupaKeyInput(saved.publishableKey);
+      setHasSavedSupaKeys(true);
+    } else {
+      setHasSavedSupaKeys(false);
     }
     setSupaConnected(isSupabaseConfigured());
   }, []);
@@ -313,13 +357,13 @@ export default function Home() {
                 ...acc,
                 availableCash: Number((acc.availableCash + b.marginBlocked + livePnl).toFixed(2)),
               }));
-              setNotice(`ISO Basket target hit: ${b.name} (+₹${livePnl.toFixed(2)})`);
+              setNotice(`ISO Basket target hit: ${b.name} (${formatINR(livePnl, { signed: true })})`);
             } else if (b.basketStopLoss > 0 && livePnl <= -b.basketStopLoss) {
               setAccount((acc) => ({
                 ...acc,
                 availableCash: Number((acc.availableCash + b.marginBlocked + livePnl).toFixed(2)),
               }));
-              setNotice(`ISO Basket SL hit: ${b.name} (₹${livePnl.toFixed(2)})`);
+              setNotice(`ISO Basket SL hit: ${b.name} (${formatINR(livePnl, { signed: true })})`);
             } else {
               remaining.push(b);
             }
@@ -408,7 +452,7 @@ export default function Home() {
     const res = closePaperPosition(account, positionId, exitPrice, "MANUAL");
     setAccount(res.state);
     if (res.trade) {
-      setNotice(`Closed ${res.trade.symbol} @ ₹${exitPrice} · Net ${res.trade.netPnl >= 0 ? "+" : ""}₹${res.trade.netPnl.toFixed(2)}`);
+      setNotice(`Closed ${res.trade.symbol} @ ${formatINR(exitPrice)} · Net ${formatINR(res.trade.netPnl, { signed: true })}`);
     }
   }
 
@@ -548,7 +592,7 @@ export default function Home() {
       setAccount((prev) => ({ ...prev, availableCash: Number((prev.availableCash - params.netMargin).toFixed(2)) }));
       setIsoBaskets((prev) => [basket, ...prev]);
       setStagedBasketLegs([]);
-      setNotice(`Executed ISO Basket "${params.name}" (${params.legs.length} legs).`);
+      setNotice(`Executed ISO Basket "${params.name}" (${plural(params.legs.length, "leg")}).`);
       return;
     }
     let nextAcc = account;
@@ -591,7 +635,7 @@ export default function Home() {
     }, 0);
     setAccount((prev) => ({ ...prev, availableCash: Number((prev.availableCash + b.marginBlocked + livePnl).toFixed(2)) }));
     setIsoBaskets((prev) => prev.filter((x) => x.id !== basketId));
-    setNotice(`Exited ISO Basket "${b.name}" (${livePnl >= 0 ? "+" : ""}₹${livePnl.toFixed(2)}).`);
+    setNotice(`Exited ISO Basket "${b.name}" (${formatINR(livePnl, { signed: true })}).`);
   }
 
   // Auth handlers
@@ -686,7 +730,7 @@ export default function Home() {
   return (
     <main className="dashboard-shell">
       <aside className="sidebar" style={{ overflowY: "auto" }}>
-        <button className="dashboard-brand" onClick={() => setActiveView("Overview")} aria-label="TradeGuru AI">
+        <button className="dashboard-brand" onClick={() => navigateView("Overview")} aria-label="TradeGuru AI">
           T<span>G</span>
         </button>
         <div className="sidebar-caption">TRADEGURU AI</div>
@@ -695,10 +739,10 @@ export default function Home() {
             <button
               key={view}
               className={`nav-item${activeView === view ? " selected" : ""}`}
-              onClick={() => setActiveView(view)}
+              onClick={() => navigateView(view)}
               aria-current={activeView === view ? "page" : undefined}
             >
-              <span className="nav-icon" aria-hidden="true">{icons[view]}</span>
+              <span className="nav-icon" aria-hidden="true"><NavIcon name={view} size={15} /></span>
               {view}
               {view === "AI Teacher" && teacherReport.mistakes.length > 0 && (
                 <span className="nav-soon">{teacherReport.mistakes.length}</span>
@@ -728,8 +772,8 @@ export default function Home() {
             <button type="button" className={`nt-pill${teacherMode ? " active" : ""}`} onClick={() => setTeacherMode((v) => !v)}>
               {teacherMode ? "AI Teacher: ON" : "AI Teacher: OFF"}
             </button>
-            <button type="button" className="nt-pill" onClick={() => setNotifOpen((v) => !v)}>
-              🔔 {unreadNotifs > 0 ? unreadNotifs : ""}
+            <button type="button" className="nt-pill" aria-label="Notifications" onClick={() => setNotifOpen((v) => !v)} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+              <NavIcon name="Bell" size={14} /> {unreadNotifs > 0 ? unreadNotifs : ""}
             </button>
             {signedIn ? (
               <div className="account-chip">
@@ -806,7 +850,7 @@ export default function Home() {
             <div className="nt-stack">
               {account.adminConfig.announcements[0] && (
                 <article className="truth-card">
-                  <span className="truth-icon">✦</span>
+                  <span className="truth-icon"><NavIcon name="Announcement" size={13} /></span>
                   <div>
                     <strong>Platform Announcement</strong>
                     <p>{account.adminConfig.announcements[0]}</p>
@@ -823,16 +867,22 @@ export default function Home() {
                 <div className="surface-card nt-kpi">
                   <span className="card-kicker">UNREALIZED MTM P&amp;L</span>
                   <strong className={unrealizedPnl >= 0 ? "nt-pos" : "nt-neg"}>
-                    {unrealizedPnl >= 0 ? "+" : ""}₹{unrealizedPnl.toFixed(2)}
+                    {formatINR(unrealizedPnl, { signed: true })}
                   </strong>
-                  <small>{account.positions.length} positions · {isoBaskets.length} ISO basket(s)</small>
+                  <small>{plural(account.positions.length, "position")} · {plural(isoBaskets.length, "ISO basket")}</small>
                 </div>
                 <div className="surface-card nt-kpi">
                   <span className="card-kicker">AI TEACHER GRADE</span>
-                  <strong>{teacherReport.grade} · {teacherReport.disciplineScore}/100</strong>
+                  <strong>
+                    {account.journal.length === 0
+                      ? "Unrated"
+                      : `${teacherReport.grade} · ${teacherReport.disciplineScore}/100`}
+                  </strong>
                   <small>
-                    <button type="button" className="nt-link-btn" onClick={() => setActiveView("AI Teacher")}>
-                      {teacherReport.mistakes.length} coaching item(s) →
+                    <button type="button" className="nt-link-btn" onClick={() => navigateView(account.journal.length === 0 ? "Trade Terminal" : "AI Teacher")}>
+                      {account.journal.length === 0
+                        ? "Place your first trade to unlock coaching →"
+                        : `${plural(teacherReport.mistakes.length, "coaching item")} →`}
                     </button>
                   </small>
                 </div>
@@ -840,7 +890,7 @@ export default function Home() {
                   <span className="card-kicker">28-COURSE ACADEMY</span>
                   <strong>{account.completedCourseIds.length} / 28 Courses</strong>
                   <small>
-                    <button type="button" className="nt-link-btn" onClick={() => setActiveView("Academy")}>
+                    <button type="button" className="nt-link-btn" onClick={() => navigateView("Academy")}>
                       Continue learning (EN / हिन्दी) →
                     </button>
                   </small>
@@ -896,7 +946,7 @@ export default function Home() {
               account={account}
               teacherMode={teacherMode}
               onToggleTeacherMode={() => setTeacherMode((v) => !v)}
-              onNavigateView={(view) => setActiveView(view as View)}
+              onNavigateView={(view) => navigateView(view as View)}
             />
           )}
 
@@ -913,7 +963,7 @@ export default function Home() {
               }}
               onQuickTradeOption={(id) => {
                 setSelectedInstrumentId(id);
-                setActiveView("Trade Terminal");
+                navigateView("Trade Terminal");
               }}
             />
           )}
@@ -1096,18 +1146,28 @@ export default function Home() {
                     <h2>Connect Supabase Cloud Keys</h2>
                     <p>Paste your public Supabase Project URL and Publishable/Anon Key directly here to enable Auth &amp; PostgreSQL Cloud Sync. Never paste a service_role secret key.</p>
                   </div>
-                  <span className={`profile-status${supaConnected ? " complete" : ""}`}>
-                    {supaConnected ? "Connected ✓" : "Local Mode"}
+                  <span className={`profile-status${supaConnected && signedIn ? " complete" : ""}`}>
+                    {supaConnected && signedIn
+                      ? "Cloud Synced ✓"
+                      : supaConnected
+                        ? "Configured · Sign In to Sync"
+                        : "Local Mode"}
                   </span>
                 </div>
+                {supaConnected && !hasSavedSupaKeys && (
+                  <p className="market-api-muted" style={{ marginBottom: 10 }}>
+                    Deployment environment keys detected. {signedIn ? "Your account is syncing with Supabase." : "Sign in to activate cloud sync, or enter custom keys below to override."}
+                  </p>
+                )}
                 <form
                   className="nt-calc-form"
                   onSubmit={(e) => {
                     e.preventDefault();
                     try {
                       saveSupabaseConfig(supaUrlInput, supaKeyInput);
+                      setHasSavedSupaKeys(true);
                       setSupaConnected(true);
-                      setNotice("Supabase keys saved in-app! You can now sign in and sync to PostgreSQL.");
+                      setNotice("Supabase keys saved in-app! Sign in to start syncing with PostgreSQL.");
                     } catch (err) {
                       setNotice(err instanceof Error ? err.message : "Invalid Supabase keys.");
                     }
@@ -1135,7 +1195,7 @@ export default function Home() {
                   </label>
                   <div className="nt-inline-actions" style={{ gridColumn: "1/-1" }}>
                     <button type="submit" className="primary-button">Connect Supabase</button>
-                    {supaConnected && (
+                    {hasSavedSupaKeys && (
                       <button
                         type="button"
                         className="nt-pill danger"
@@ -1143,6 +1203,7 @@ export default function Home() {
                           clearSupabaseConfig();
                           setSupaUrlInput("");
                           setSupaKeyInput("");
+                          setHasSavedSupaKeys(false);
                           setSupaConnected(isSupabaseConfigured());
                           setNotice("Disconnected in-app Supabase keys.");
                         }}
@@ -1223,9 +1284,9 @@ export default function Home() {
       </section>
 
       {notice && !authOpen && (
-        <div className="toast" role="status" onClick={() => setNotice("")}>
-          {notice}
-          <button aria-label="Dismiss">×</button>
+        <div className="toast" role="status">
+          <span>{notice}</span>
+          <button type="button" aria-label="Dismiss" onClick={() => setNotice("")}>×</button>
         </div>
       )}
 

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { computeAnalytics } from "@/lib/analytics";
+import { formatINR } from "@/lib/format";
 import { calculatePositionSize } from "@/lib/indian-charges";
 import {
   computePositionPnl,
@@ -126,7 +127,7 @@ export function RiskCenterView({ account, quotes, onUpdateRiskLimits }: Props) {
         <div className="surface-card nt-kpi">
           <span className="card-kicker">DAILY P&amp;L vs LIMIT</span>
           <strong className={dailyTotal >= 0 ? "nt-pos" : "nt-neg"}>
-            {dailyTotal >= 0 ? "+" : ""}₹{dailyTotal.toFixed(0)}
+            {formatINR(dailyTotal, { signed: true, decimals: 0 })}
           </strong>
           <small>Max Daily Loss Limit: −₹{account.riskLimits.maxDailyLossAmount.toLocaleString("en-IN")}</small>
         </div>

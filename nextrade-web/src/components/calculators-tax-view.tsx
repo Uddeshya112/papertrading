@@ -8,6 +8,7 @@ import {
   type BrokeragePlan,
   type ProductType,
 } from "@/lib/indian-charges";
+import { formatINR } from "@/lib/format";
 import { SEGMENT_LABELS, type MarketSegment } from "@/lib/paper-instruments";
 
 export function CalculatorsTaxView({
@@ -167,19 +168,19 @@ export function CalculatorsTaxView({
 
           <div className="nt-cost-table">
             <div><span>Total Round-Trip Turnover</span><strong>₹{charges.turnover.toLocaleString("en-IN")}</strong></div>
-            <div><span>Brokerage ({brokeragePlan === "ZERO_BROKERAGE" ? "₹0 Plan" : "₹20/Order"})</span><strong>₹{charges.brokerage.toFixed(2)}</strong></div>
-            <div><span>{charges.sttLabel} (Securities / Commodities Txn Tax)</span><strong>₹{charges.sttOrCtt.toFixed(2)}</strong></div>
-            <div><span>Exchange Transaction Charges</span><strong>₹{charges.exchangeCharges.toFixed(2)}</strong></div>
-            <div><span>SEBI Turnover Fees</span><strong>₹{charges.sebiFees.toFixed(2)}</strong></div>
-            <div><span>Stamp Duty (Buy side)</span><strong>₹{charges.stampDuty.toFixed(2)}</strong></div>
-            <div><span>GST (18% on Brokerage + Exchange + SEBI)</span><strong>₹{charges.gst.toFixed(2)}</strong></div>
+            <div><span>Brokerage ({brokeragePlan === "ZERO_BROKERAGE" ? "₹0 Plan" : "₹20/Order"})</span><strong>{formatINR(charges.brokerage)}</strong></div>
+            <div><span>{charges.sttLabel} (Securities / Commodities Txn Tax)</span><strong>{formatINR(charges.sttOrCtt)}</strong></div>
+            <div><span>Exchange Transaction Charges</span><strong>{formatINR(charges.exchangeCharges)}</strong></div>
+            <div><span>SEBI Turnover Fees</span><strong>{formatINR(charges.sebiFees)}</strong></div>
+            <div><span>Stamp Duty (Buy side)</span><strong>{formatINR(charges.stampDuty)}</strong></div>
+            <div><span>GST (18% on Brokerage + Exchange + SEBI)</span><strong>{formatINR(charges.gst)}</strong></div>
             <div className="nt-cost-total">
               <span>Minimum Profitable Trade (Total Cost)</span>
-              <strong>₹{charges.totalCharges.toFixed(2)}</strong>
+              <strong>{formatINR(charges.totalCharges)}</strong>
             </div>
             <div>
               <span>Breakeven Move Needed</span>
-              <strong>₹{charges.breakevenPointsPerUnit.toFixed(2)} / unit</strong>
+              <strong>{formatINR(charges.breakevenPointsPerUnit)} / unit</strong>
             </div>
           </div>
 
@@ -228,13 +229,13 @@ export function CalculatorsTaxView({
           <div>
             <span>Expectancy per Trade</span>
             <strong className={expectancyPerTrade >= 0 ? "nt-pos" : "nt-neg"}>
-              {expectancyPerTrade >= 0 ? "+" : ""}₹{expectancyPerTrade.toLocaleString("en-IN")}
+              {formatINR(expectancyPerTrade, { signed: true })}
             </strong>
           </div>
           <div>
             <span>Projected Net Edge over {sampleTrades} Trades</span>
             <strong className={projectedSeriesPnl >= 0 ? "nt-pos" : "nt-neg"}>
-              {projectedSeriesPnl >= 0 ? "+" : ""}₹{projectedSeriesPnl.toLocaleString("en-IN")}
+              {formatINR(projectedSeriesPnl, { signed: true })}
             </strong>
           </div>
           <div>

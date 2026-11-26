@@ -8,6 +8,7 @@ import {
   type BacktestRuleType,
 } from "@/lib/backtest-engine";
 import { CHART_TIMEFRAMES, type ChartTimeframe } from "@/lib/candlestick-engine";
+import { formatINR } from "@/lib/format";
 import type { PaperAccountState } from "@/lib/paper-engine";
 import { PAPER_INSTRUMENTS, type LiveQuote } from "@/lib/paper-instruments";
 
@@ -130,7 +131,7 @@ export function BacktestLabView({ account, quotes }: Props) {
           <strong className={currentResult.netPnl >= 0 ? "nt-pos" : "nt-neg"}>
             {currentResult.returnPct >= 0 ? "+" : ""}{currentResult.returnPct}%
           </strong>
-          <small>Net ₹{currentResult.netPnl.toLocaleString("en-IN")} (Costs ₹{currentResult.totalCosts})</small>
+          <small>Net {formatINR(currentResult.netPnl, { signed: true })} (Costs {formatINR(currentResult.totalCosts)})</small>
         </div>
         <div className="surface-card nt-kpi">
           <span className="card-kicker">WIN RATE / PROFIT FACTOR</span>
@@ -139,7 +140,7 @@ export function BacktestLabView({ account, quotes }: Props) {
         </div>
         <div className="surface-card nt-kpi">
           <span className="card-kicker">EXPECTANCY / SHARPE</span>
-          <strong>₹{currentResult.expectancy.toLocaleString("en-IN")} · SR {currentResult.sharpeRatio}</strong>
+          <strong>{formatINR(currentResult.expectancy, { signed: true })} · SR {currentResult.sharpeRatio}</strong>
           <small>Max Drawdown: {currentResult.maxDrawdownPct}%</small>
         </div>
         <div className="surface-card nt-kpi">

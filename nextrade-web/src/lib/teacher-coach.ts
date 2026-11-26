@@ -1,4 +1,5 @@
 import { computeAnalytics } from "./analytics";
+import { formatINR, plural } from "./format";
 import type { EmotionTag, OrderSide, OrderType, PaperAccountState } from "./paper-engine";
 import { getInstrumentById, type MarketSegment } from "./paper-instruments";
 
@@ -46,7 +47,7 @@ export type TeacherReport = {
   disciplineScore: number;
   improvementScore: number;
   goodProcessLosses: number;
-  grade: "A+" | "A" | "B+" | "B" | "C" | "D";
+  grade: "Unrated" | "A+" | "A" | "B+" | "B" | "C" | "D";
   headline: string;
   weaknessProfile: string[];
   repeatedMistakeAlerts: string[];
@@ -474,17 +475,19 @@ export function diagnoseTradingReport(account: PaperAccountState): TeacherReport
   const pillars: SkillPillar[] = [
     { key: "sl", label: "Stop-Loss Discipline", score: slScore, status: scoreToStatus(slScore), teacherNote: `${missingSl.length} missing SL, ${brokenSl.length} violated SL.` },
     { key: "sizing", label: "Position Sizing & Exposure", score: sizingScore, status: scoreToStatus(sizingScore), teacherNote: `Max Drawdown ${stats.maxDrawdownPercent.toFixed(1)}% (limit ${account.riskLimits.maxDrawdownPct}%).` },
-    { key: "rr", label: "Entry, Exit & Risk/Reward", score: rrScore, status: scoreToStatus(rrScore), teacherNote: `Expectancy ₹${stats.expectancyPerTrade.toLocaleString("en-IN")}/trade.` },
+    { key: "rr", label: "Entry, Exit & Risk/Reward", score: rrScore, status: scoreToStatus(rrScore), teacherNote: `Expectancy ${formatINR(stats.expectancyPerTrade)}/trade.` },
     { key: "emotion", label: "Emotional & Impulse Control", score: emotionScore, status: scoreToStatus(emotionScore), teacherNote: `${emotional.length} emotional trade(s) flagged.` },
     { key: "journal", label: "Strategy & Journaling", score: journalScore, status: scoreToStatus(journalScore), teacherNote: `${total - missingRefl}/${total} trades have reflections.` },
-    { key: "cost", label: "Overtrading & Cost Efficiency", score: costScore, status: scoreToStatus(costScore), teacherNote: `Max ${maxTradesInDay} trades/day · Charges ₹${stats.totalCharges.toFixed(2)}.` },
+    { key: "cost", label: "Overtrading & Cost Efficiency", score: costScore, status: scoreToStatus(costScore), teacherNote: `Max ${plural(maxTradesInDay, "trade")}/day · Charges ${formatINR(stats.totalCharges)}.` },
   ];
 
-  const overallScore = Math.round(pillars.reduce((s, p) => s + p.score, 0) / pillars.length);
-  const disciplineScore = Math.round((slScore + sizingScore + emotionScore + journalScore) / 4);
+  const isUnrated = total === 0;
+  const rawOverall = Math.round(pillars.reduce((s, p) => s + p.score, 0) / pillars.length);
+  const overallScore = isUnrated ? 0 : rawOverall;
+  const disciplineScore = isUnrated ? 0 : Math.round((slScore + sizingScore + emotionScore + journalScore) / 4);
   const academyBonus = Math.min(20, account.completedCourseIds.length);
-  const improvementScore = Math.min(100, Math.round(disciplineScore * 0.8 + academyBonus));
-  const grade = scoreToGrade(overallScore);
+  const improvementScore = isUnrated ? 0 : Math.min(100, Math.round(disciplineScore * 0.8 + academyBonus));
+  const grade: TeacherReport["grade"] = isUnrated ? "Unrated" : scoreToGrade(rawOverall);
 
   const weaknessProfile = [...pillars]
     .sort((a, b) => a.score - b.score)
@@ -502,12 +505,12 @@ export function diagnoseTradingReport(account: PaperAccountState): TeacherReport
   const dailyFeedback =
     todayTrades.length === 0
       ? "No closed trades today yet. Focus on completing 1 Academy lesson and planning 1–2 high-conviction Bracket orders."
-      : `Today: ${todayTrades.length} trade(s), Net ${todayNet >= 0 ? "+" : ""}₹${todayNet.toFixed(2)}. ${todayTrades.every((t) => t.plannedStopLoss) ? "Excellent stop-loss discipline today!" : "Reminder: never skip setting a stop-loss before entry."}`;
+      : `Today: ${plural(todayTrades.length, "trade")}, Net ${formatINR(todayNet, { signed: true })}. ${todayTrades.every((t) => t.plannedStopLoss) ? "Excellent stop-loss discipline today!" : "Reminder: never skip setting a stop-loss before entry."}`;
 
   const weeklyReview =
     total === 0
       ? "Build your first 5–10 simulated trades this week so your AI Teacher can compute your weekly edge and discipline trend."
-      : `Across ${total} recorded trade(s), Discipline Score is ${disciplineScore}/100 with ${stats.winRate.toFixed(1)}% win rate and ₹${stats.expectancyPerTrade.toFixed(0)} expectancy/trade.`;
+      : `Across ${plural(total, "recorded trade")}, Discipline Score is ${disciplineScore}/100 with ${stats.winRate.toFixed(1)}% win rate and ${formatINR(stats.expectancyPerTrade, { decimals: 0 })} expectancy/trade.`;
 
   const monthlyReport = `Monthly Readiness: ${stats.readinessScore}% Go-Live score · ${account.completedCourseIds.length}/28 Academy courses completed · ${account.resetCount} account refill(s) recorded with full history preserved.`;
 

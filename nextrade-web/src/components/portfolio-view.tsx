@@ -8,6 +8,7 @@ import {
   type PaperAccountState,
 } from "@/lib/paper-engine";
 import { getInstrumentById, type LiveQuote } from "@/lib/paper-instruments";
+import { formatINR } from "@/lib/format";
 
 type Props = {
   account: PaperAccountState;
@@ -75,9 +76,9 @@ export function PortfolioView({
         <div className="surface-card nt-kpi">
           <span className="card-kicker">DAILY / LIFETIME P&amp;L</span>
           <strong className={dailyPnl >= 0 ? "nt-pos" : "nt-neg"}>
-            {dailyPnl >= 0 ? "+" : ""}₹{dailyPnl.toFixed(2)}
+            {formatINR(dailyPnl, { signed: true })}
           </strong>
-          <small>Lifetime Realized: {lifetimeRealizedPnl >= 0 ? "+" : ""}₹{lifetimeRealizedPnl.toFixed(2)}</small>
+          <small>Lifetime Realized: {formatINR(lifetimeRealizedPnl, { signed: true })}</small>
         </div>
       </div>
 
@@ -274,7 +275,7 @@ function PositionsTable({
                 <td>₹{pos.entryPrice.toLocaleString("en-IN")}</td>
                 <td>₹{ltp.toLocaleString("en-IN")}</td>
                 <td>{pos.stopLossPrice ? `SL ₹${pos.stopLossPrice}` : "—"} / {pos.targetPrice ? `T ₹${pos.targetPrice}` : "—"}</td>
-                <td className={pnl >= 0 ? "nt-pos" : "nt-neg"}><strong>{pnl >= 0 ? "+" : ""}₹{pnl.toFixed(2)}</strong></td>
+                <td className={pnl >= 0 ? "nt-pos" : "nt-neg"}><strong>{formatINR(pnl, { signed: true })}</strong></td>
                 <td><button type="button" className="nt-pill danger" onClick={() => onClosePosition(pos.id, ltp)}>Exit</button></td>
               </tr>
             );

@@ -40,6 +40,7 @@ import {
 } from "@/lib/paper-instruments";
 import { evaluatePreTradeMistakes } from "@/lib/teacher-coach";
 import { TradingViewWidget } from "./tradingview-widget";
+import { formatINR } from "@/lib/format";
 
 type Props = {
   account: PaperAccountState;
@@ -111,6 +112,17 @@ export function ProTerminalView({
   const [rationale, setRationale] = useState("");
   const [riskPctHelper, setRiskPctHelper] = useState(1);
   const [confirmPending, setConfirmPending] = useState<PlaceOrderInput | null>(null);
+
+  // Reset order ticket prices and drawings whenever the active symbol changes
+  useEffect(() => {
+    setLimitPrice("");
+    setTriggerPrice("");
+    setStopLossPrice("");
+    setTargetPrice("");
+    setHLines([]);
+    setTrendLines([]);
+    setPendingTrendStart(null);
+  }, [selectedId]);
 
   // Keyboard shortcuts: B = Buy, S = Sell, F = Fullscreen, Escape = Close Fullscreen/Modal
   useEffect(() => {
@@ -313,9 +325,9 @@ export function ProTerminalView({
         </div>
       </section>
 
-      <div className="nt-terminal-grid">
-        {/* Left: Watchlist / Market Watch */}
-        {!fullScreen && (
+      <div className={`nt-terminal-grid${splitLayout && !fullScreen ? " split-active" : ""}`}>
+        {/* Left: Watchlist / Market Watch (auto-collapses in Split 2-Chart mode) */}
+        {!fullScreen && !splitLayout && (
           <aside className="surface-card nt-market-watch">
             <div className="card-heading">
               <div>
@@ -341,7 +353,21 @@ export function ProTerminalView({
               ))}
             </div>
             <div className="nt-watch-list">
-              {filteredInstruments.map((item) => {
+              {filteredInstruments.length === 0 ? (
+                <div className="nt-watch-empty" role="status">
+                  <span>No instruments match &ldquo;{search || segmentFilter}&rdquo;</span>
+                  <button
+                    type="button"
+                    className="nt-pill"
+                    onClick={() => {
+                      setSearch("");
+                      setSegmentFilter("ALL");
+                    }}
+                  >
+                    Clear search
+                  </button>
+                </div>
+              ) : filteredInstruments.map((item) => {
                 const q = quotes[item.id];
                 const up = (q?.change ?? 0) >= 0;
                 return (
@@ -502,7 +528,13 @@ export function ProTerminalView({
             </div>
           ) : (
             <div className="nt-tv-box">
-              <TradingViewWidget kind="advanced-chart" symbol={instrument.tradingViewSymbol} title={`${instrument.symbol} chart`} />
+              <TradingViewWidget
+                key={instrument.tradingViewSymbol}
+                kind="advanced-chart"
+                symbol={instrument.tradingViewSymbol}
+                title={`${instrument.symbol} chart`}
+                note="TradingView embeds show exchange-delayed data; order fills execute at the simulator quote above."
+              />
             </div>
           )}
 
@@ -520,7 +552,7 @@ export function ProTerminalView({
                 <div className="nt-depth-head"><span>BID QTY</span><span>ORDERS</span><span>BID PRICE</span></div>
                 {depth.bids.map((b, i) => (
                   <div key={i} className="nt-depth-row bid" onClick={() => { setOrderType("LIMIT"); setLimitPrice(String(b.price)); }}>
-                    <span>{b.qty}</span><span>{b.orders}</span><strong className="nt-pos">₹{b.price}</strong>
+                    <span>{b.qty}</span><span>{b.orders}</span><strong className="nt-pos">{formatINR(b.price)}</strong>
                   </div>
                 ))}
                 <div className="nt-depth-foot">Total Bid: <strong>{depth.totalBidQty.toLocaleString("en-IN")}</strong></div>
@@ -529,7 +561,7 @@ export function ProTerminalView({
                 <div className="nt-depth-head"><span>ASK PRICE</span><span>ORDERS</span><span>ASK QTY</span></div>
                 {depth.asks.map((a, i) => (
                   <div key={i} className="nt-depth-row ask" onClick={() => { setOrderType("LIMIT"); setLimitPrice(String(a.price)); }}>
-                    <strong className="nt-neg">₹{a.price}</strong><span>{a.orders}</span><span>{a.qty}</span>
+                    <strong className="nt-neg">{formatINR(a.price)}</strong><span>{a.orders}</span><span>{a.qty}</span>
                   </div>
                 ))}
                 <div className="nt-depth-foot">Total Ask: <strong>{depth.totalAskQty.toLocaleString("en-IN")}</strong></div>
@@ -624,11 +656,25 @@ export function ProTerminalView({
             <div className="nt-form-row">
               <label>
                 Stop-Loss (₹)
-                <input type="number" step={instrument.tickSize} required={orderType === "BRACKET" || orderType === "COVER"} value={stopLossPrice} onChange={(e) => setStopLossPrice(e.target.value)} placeholder="e.g. 2165" />
+                <input
+                  type="number"
+                  step={instrument.tickSize}
+                  required={orderType === "BRACKET" || orderType === "COVER"}
+                  value={stopLossPrice}
+                  onChange={(e) => setStopLossPrice(e.target.value)}
+                  placeholder={`e.g. ${Math.round((quote?.last ?? instrument.basePrice) * (side === "BUY" ? 0.98 : 1.02))}`}
+                />
               </label>
               <label>
                 Target (₹)
-                <input type="number" step={instrument.tickSize} required={orderType === "BRACKET"} value={targetPrice} onChange={(e) => setTargetPrice(e.target.value)} placeholder="e.g. 2255" />
+                <input
+                  type="number"
+                  step={instrument.tickSize}
+                  required={orderType === "BRACKET"}
+                  value={targetPrice}
+                  onChange={(e) => setTargetPrice(e.target.value)}
+                  placeholder={`e.g. ${Math.round((quote?.last ?? instrument.basePrice) * (side === "BUY" ? 1.03 : 0.97))}`}
+                />
               </label>
             </div>
 
@@ -671,8 +717,8 @@ export function ProTerminalView({
             </div>
 
             <div className="nt-cost-preview">
-              <div><span>Margin Blocked</span><strong>₹{requiredMargin.toLocaleString("en-IN")}</strong></div>
-              <div><span>Est. Charges</span><strong>₹{estCharges.totalCharges.toFixed(2)}</strong></div>
+              <div><span>Margin Blocked</span><strong>{formatINR(requiredMargin)}</strong></div>
+              <div><span>Est. Charges</span><strong>{formatINR(estCharges.totalCharges)}</strong></div>
               <div><span>Notional</span><strong>₹{(activePrice * quantity).toLocaleString("en-IN")}</strong></div>
             </div>
 
