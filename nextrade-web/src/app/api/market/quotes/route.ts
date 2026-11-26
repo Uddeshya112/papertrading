@@ -112,6 +112,11 @@ export async function GET(request: NextRequest) {
       circuitState: getCircuitState(start),
       source: "Yahoo Finance Public Feed (Delayed)",
       quotes: cacheData,
+    }, {
+      headers: {
+        "Cache-Control": "public, s-maxage=15, stale-while-revalidate=45",
+        "CDN-Cache-Control": "public, s-maxage=15, stale-while-revalidate=45",
+      },
     });
   }
 
@@ -153,6 +158,11 @@ export async function GET(request: NextRequest) {
       circuitState: "CLOSED",
       source: "Yahoo Finance Public Feed (Delayed)",
       quotes: results,
+    }, {
+      headers: {
+        "Cache-Control": "public, s-maxage=15, stale-while-revalidate=45",
+        "CDN-Cache-Control": "public, s-maxage=15, stale-while-revalidate=45",
+      },
     });
   }
 

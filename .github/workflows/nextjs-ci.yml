@@ -1,0 +1,32 @@
+name: TradeGuru AI Web CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "nextrade-web/**"
+      - "supabase/migrations/**"
+  pull_request:
+    branches: [ main ]
+    paths:
+      - "nextrade-web/**"
+      - "supabase/migrations/**"
+
+jobs:
+  verify-web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: nextrade-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: nextrade-web/package-lock.json
+      - run: npm ci
+      - run: node tests/run-enterprise-tests.mjs
+      - run: node tests/run-security-db-tests.mjs
+      - run: node tests/run-integration-tests.mjs
+      - run: npm run build

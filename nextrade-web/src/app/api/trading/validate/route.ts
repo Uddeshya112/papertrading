@@ -5,15 +5,56 @@ const ALLOWED_TYPES = new Set(["MARKET", "LIMIT", "AUTO-LIMIT", "SL", "SL-M", "B
 const ALLOWED_PRODUCTS = new Set(["INTRADAY", "DELIVERY", "NRML"]);
 const ALLOWED_TIF = new Set(["DAY", "GTC"]);
 
+const RATE_WINDOW_MS = 60_000;
+const MAX_REQ_PER_MIN = 60;
+const MAX_BODY_BYTES = 16_384;
+const rateBuckets = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(ip: string, now: number): boolean {
+  if (rateBuckets.size > 10_000) rateBuckets.clear();
+  const bucket = rateBuckets.get(ip);
+  if (!bucket || now > bucket.resetAt) {
+    rateBuckets.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return true;
+  }
+  if (bucket.count >= MAX_REQ_PER_MIN) return false;
+  bucket.count += 1;
+  return true;
+}
+
 /**
  * Server-Side Simulated Order Payload Validator (`POST /api/trading/validate`).
- * Validates order structure, numeric bounds, and SL/Target invariants server-side
- * without ever trusting client-supplied balances or representing simulated orders as exchange fills.
+ * Enforces per-IP rate limiting, payload size cap, order structure, numeric bounds,
+ * and SL/Target invariants server-side without ever trusting client-supplied balances.
  */
 export async function POST(request: NextRequest) {
+  const now = Date.now();
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!checkRateLimit(ip, now)) {
+    return NextResponse.json(
+      { ok: false, error: "RATE_LIMITED: Too many order validation requests. Retry shortly." },
+      { status: 429, headers: { "Retry-After": "60" } }
+    );
+  }
+
+  const contentLength = Number(request.headers.get("content-length") ?? "0");
+  if (Number.isFinite(contentLength) && contentLength > MAX_BODY_BYTES) {
+    return NextResponse.json(
+      { ok: false, error: "PAYLOAD_TOO_LARGE: Request exceeds 16 KB limit." },
+      { status: 413 }
+    );
+  }
+
   let body: Record<string, unknown>;
   try {
-    body = (await request.json()) as Record<string, unknown>;
+    const raw = await request.text();
+    if (raw.length > MAX_BODY_BYTES) {
+      return NextResponse.json(
+        { ok: false, error: "PAYLOAD_TOO_LARGE: Request exceeds 16 KB limit." },
+        { status: 413 }
+      );
+    }
+    body = JSON.parse(raw) as Record<string, unknown>;
   } catch {
     return NextResponse.json({ ok: false, error: "INVALID_JSON: Request body must be valid JSON." }, { status: 400 });
   }

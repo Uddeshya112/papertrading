@@ -751,7 +751,7 @@ export function ProTerminalView({
             <span className="card-kicker">ORDER CONFIRMATION (SIMULATED)</span>
             <h2 style={{ margin: "6px 0 10px" }}>{confirmPending.side} {quantity} {instrument.symbol}</h2>
             <p className="nt-prose">
-              Type: <strong>{confirmPending.orderType}</strong> · Product: <strong>{confirmPending.product}</strong> · Est. Margin: <strong>₹{requiredMargin.toLocaleString("en-IN")}</strong> · Est. Charges: <strong>₹{estCharges.totalCharges.toFixed(2)}</strong>.
+              Type: <strong>{confirmPending.orderType}</strong> · Product: <strong>{confirmPending.product}</strong> · Est. Margin: <strong>{formatINR(requiredMargin)}</strong> · Est. Charges: <strong>{formatINR(estCharges.totalCharges)}</strong>.
             </p>
             <div className="nt-inline-actions" style={{ marginTop: 18 }}>
               <button

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { WorkspaceErrorBoundary } from "@/components/workspace-error-boundary";
 import type { User } from "@supabase/supabase-js";
@@ -195,6 +195,7 @@ export default function Home() {
   const [teacherMode, setTeacherMode] = useState(true);
   const [stagedBasketLegs, setStagedBasketLegs] = useState<BasketLegDraft[]>([]);
   const [isoBaskets, setIsoBaskets] = useState<ExecutedIsoBasket[]>([]);
+  const lastCloudPayloadRef = useRef<string>("");
 
   // Sync activeView with ?view=<slug> URL parameter and browser Back/Forward buttons
   function navigateView(nextView: View) {
@@ -271,9 +272,22 @@ export default function Home() {
     if (!hydrated) return;
     savePaperState(account, signedIn ? accountEmail : undefined);
     if (!signedIn || !authUserId) return;
+    const fingerprint = JSON.stringify({
+      cash: account.availableCash,
+      pos: account.positions.length,
+      ord: account.orders.length,
+      jrn: account.journal.length,
+      ref: account.resetCount,
+      crs: account.completedCourseIds.length,
+      wl: account.watchlist.length,
+      al: account.alerts.length,
+    });
+    if (fingerprint === lastCloudPayloadRef.current) return;
+    const jitterMs = 2200 + Math.floor(Math.random() * 1200);
     const timer = window.setTimeout(() => {
+      lastCloudPayloadRef.current = fingerprint;
       void pushAccountToCloud(authUserId, account).then((status) => setCloudStatus(status));
-    }, 1200);
+    }, jitterMs);
     return () => window.clearTimeout(timer);
   }, [account, hydrated, signedIn, accountEmail, authUserId]);
 
@@ -281,8 +295,9 @@ export default function Home() {
   useEffect(() => {
     let active = true;
     async function syncPublicQuotes() {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
       try {
-        const res = await fetch("/api/market/quotes", { cache: "no-store" });
+        const res = await fetch("/api/market/quotes");
         if (!res.ok) return;
         const payload = (await res.json()) as {
           ok?: boolean;
@@ -317,7 +332,8 @@ export default function Home() {
       }
     }
     void syncPublicQuotes();
-    const interval = window.setInterval(() => void syncPublicQuotes(), 25000);
+    const pollMs = 25000 + Math.floor(Math.random() * 10000);
+    const interval = window.setInterval(() => void syncPublicQuotes(), pollMs);
     return () => { active = false; window.clearInterval(interval); };
   }, []);
 
