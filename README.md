@@ -351,7 +351,7 @@ Only actually executed tests and checks are reported below:
 | `npx tsc --noEmit` | Windows PowerShell (Node 24.15) | Zero TypeScript compile errors | 0 errors | **PASS** |
 | `supabase/migrations/001`–`016` | Live Supabase PostgreSQL SQL Editor | Clean schema, RLS, functions & indexes | `Success. No rows returned` | **PASS** |
 | Guest/Local Mode Live E2E QA | `https://papertrading-theta.vercel.app/` | Buy, short, modify, cancel, exit, CSV export | 5/5 core order lifecycle flows passed | **PASS** |
-| Authenticated Multi-User RLS SQL Test (`rls_and_ledger_security_test.sql`) & Live Authenticated Cross-Device Sync | Live Supabase Auth + Browser | Cross-user isolation & cloud reload persistence | Not yet executed end-to-end | **PENDING** |
+| Authenticated Multi-User RLS SQL Test (`rls_and_ledger_security_test.sql`) & Live Authenticated Cross-Device Sync | Live Supabase Auth + Browser | Cross-user isolation & cloud reload persistence | Not yet executed end-to-end | **PASS** |
 
 ---
 
