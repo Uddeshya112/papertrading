@@ -631,10 +631,10 @@ export function ProTerminalView({
 
           <div className="nt-side-toggle">
             <button type="button" className={`nt-side-btn buy${side === "BUY" ? " active" : ""}`} onClick={() => setSide("BUY")}>
-              BUY / LONG (B)
+              BUY
             </button>
             <button type="button" className={`nt-side-btn sell${side === "SELL" ? " active" : ""}`} onClick={() => setSide("SELL")}>
-              SELL / SHORT (S)
+              SELL
             </button>
           </div>
 

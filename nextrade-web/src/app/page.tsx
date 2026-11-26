@@ -1058,8 +1058,8 @@ export default function Home() {
                 </div>
                 <div className="surface-card nt-kpi">
                   <span className="card-kicker">PORTFOLIO VALUE</span>
-                  <strong>{formatINR(netEquity, { decimals: 0 })}</strong>
-                  <small>Cash + open holdings mark-to-market</small>
+                  <strong>{formatINR(usedMargin + unrealizedPnl, { decimals: 0 })}</strong>
+                  <small>Current value of open holdings & positions</small>
                 </div>
                 <div className="surface-card nt-kpi">
                   <span className="card-kicker">
