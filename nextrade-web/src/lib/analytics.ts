@@ -154,7 +154,7 @@ export function computeAnalytics(state: PaperAccountState): AnalyticsSummary {
       label: "Positive Expectancy Net of Indian Costs",
       detail: "Expectancy per trade must stay above ₹0 after accounting for STT/CTT, GST, SEBI fees, and stamp duty.",
       passed: totalTrades > 0 && expectancyPerTrade > 0,
-      progressText: totalTrades > 0 ? `₹${expectancyPerTrade.toLocaleString("en-IN")}/trade` : "No closed trades",
+      progressText: totalTrades > 0 ? `${formatINR(expectancyPerTrade)}/trade` : "No closed trades",
     },
     {
       id: "market_regimes",

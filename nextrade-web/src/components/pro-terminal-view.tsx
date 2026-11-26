@@ -41,6 +41,8 @@ import {
 import { evaluatePreTradeMistakes } from "@/lib/teacher-coach";
 import { TradingViewWidget } from "./tradingview-widget";
 import { formatINR } from "@/lib/format";
+import { InfoTip } from "./info-tip";
+import { NavIcon } from "./nav-icons";
 
 type Props = {
   account: PaperAccountState;
@@ -54,6 +56,7 @@ type Props = {
   onPlaceOrder: (input: PlaceOrderInput) => void;
   onToggleWatchlist: (id: string) => void;
   teacherMode: boolean;
+  uiMode?: "SIMPLE" | "PRO";
 };
 
 type DrawTool = "NONE" | "HLINE" | "TRENDLINE";
@@ -73,6 +76,7 @@ export function ProTerminalView({
   onPlaceOrder,
   onToggleWatchlist,
   teacherMode,
+  uiMode = "SIMPLE",
 }: Props) {
   const [segmentFilter, setSegmentFilter] = useState<MarketSegment | "ALL">("ALL");
   const [search, setSearch] = useState("");
@@ -82,6 +86,14 @@ export function ProTerminalView({
   const [splitLayout, setSplitLayout] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
   const [depthLevels, setDepthLevels] = useState<5 | 10>(5);
+  const [watchlistOpen, setWatchlistOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(uiMode === "PRO");
+  const [depthOpen, setDepthOpen] = useState(uiMode === "PRO");
+
+  useEffect(() => {
+    setAdvancedOpen(uiMode === "PRO");
+    setDepthOpen(uiMode === "PRO");
+  }, [uiMode]);
 
   // Indicators & drawing tools
   const [showSma, setShowSma] = useState(false);
@@ -129,6 +141,7 @@ export function ProTerminalView({
     function onKeyDown(e: KeyboardEvent) {
       const tag = (e.target as HTMLElement | null)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.key === "/") { e.preventDefault(); setWatchlistOpen((v) => !v); return; }
       if (e.key === "b" || e.key === "B") setSide("BUY");
       else if (e.key === "s" || e.key === "S") setSide("SELL");
       else if (e.key === "f" || e.key === "F") setFullScreen((v) => !v);
@@ -296,8 +309,17 @@ export function ProTerminalView({
       <section className="surface-card nt-regime-bar">
         <div className="nt-regime-left">
           <div className="nt-inline-actions">
+            <button
+              type="button"
+              className={`nt-pill${watchlistOpen ? " active" : ""}`}
+              onClick={() => setWatchlistOpen((v) => !v)}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+            >
+              <NavIcon name="Search" size={14} />
+              {watchlistOpen ? "Hide Watchlist (/)" : "Watchlist / Search (/)"}
+            </button>
             <span className="nt-free-badge">SIMULATED EXECUTION · ZERO REAL MONEY</span>
-            <span className="source-tag">Shortcuts: B (Buy) · S (Sell) · F (Fullscreen)</span>
+            <span className="source-tag">Shortcuts: / (Search) · B · S · F</span>
           </div>
           <div className="nt-pill-row">
             {(Object.keys(REGIME_META) as MarketRegime[]).map((key) => (
@@ -325,9 +347,9 @@ export function ProTerminalView({
         </div>
       </section>
 
-      <div className={`nt-terminal-grid${splitLayout && !fullScreen ? " split-active" : ""}`}>
-        {/* Left: Watchlist / Market Watch (auto-collapses in Split 2-Chart mode) */}
-        {!fullScreen && !splitLayout && (
+      <div className={`nt-terminal-grid ${watchlistOpen && !fullScreen && !splitLayout ? "tg-with-drawer" : "tg-two-col"}`}>
+        {/* Collapsible Left Drawer: Market Watch (toggle via "/" or header button) */}
+        {watchlistOpen && !fullScreen && !splitLayout && (
           <aside className="surface-card nt-market-watch">
             <div className="card-heading">
               <div>
@@ -553,15 +575,26 @@ export function ProTerminalView({
             </div>
           )}
 
-          {/* 5 / 10-Level Market Depth Ladder */}
+          {/* Collapsible 5 / 10-Level Market Depth Ladder */}
           <div className="nt-depth-card">
-            <div className="nt-inline-actions" style={{ justifyContent: "space-between", marginBottom: 8 }}>
-              <span className="card-kicker">SIMULATED MARKET DEPTH (ORDER BOOK)</span>
-              <div className="nt-inline-actions">
-                <button type="button" className={`nt-seg-tab${depthLevels === 5 ? " active" : ""}`} onClick={() => setDepthLevels(5)}>5 Levels</button>
-                <button type="button" className={`nt-seg-tab${depthLevels === 10 ? " active" : ""}`} onClick={() => setDepthLevels(10)}>10 Levels</button>
-              </div>
+            <div className="nt-inline-actions" style={{ justifyContent: "space-between", marginBottom: depthOpen ? 8 : 0 }}>
+              <button
+                type="button"
+                className="nt-link-btn"
+                onClick={() => setDepthOpen((v) => !v)}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 600, color: "#0f172a" }}
+              >
+                <span className="card-kicker" style={{ margin: 0 }}>SIMULATED MARKET DEPTH (ORDER BOOK)</span>
+                <span style={{ fontSize: 11, color: "#64748b" }}>{depthOpen ? "Hide ▲" : "Show ▼"}</span>
+              </button>
+              {depthOpen && (
+                <div className="nt-inline-actions">
+                  <button type="button" className={`nt-seg-tab${depthLevels === 5 ? " active" : ""}`} onClick={() => setDepthLevels(5)}>5 Levels</button>
+                  <button type="button" className={`nt-seg-tab${depthLevels === 10 ? " active" : ""}`} onClick={() => setDepthLevels(10)}>10 Levels</button>
+                </div>
+              )}
             </div>
+            {depthOpen && (
             <div className="nt-depth-grid">
               <div>
                 <div className="nt-depth-head"><span>BID QTY</span><span>ORDERS</span><span>BID PRICE</span></div>
@@ -582,6 +615,7 @@ export function ProTerminalView({
                 <div className="nt-depth-foot">Total Ask: <strong>{depth.totalAskQty.toLocaleString("en-IN")}</strong></div>
               </div>
             </div>
+            )}
           </div>
         </section>
 
@@ -605,134 +639,220 @@ export function ProTerminalView({
           </div>
 
           <form className="nt-order-form" onSubmit={handleSubmit}>
-            <div className="nt-form-row">
-              <label>
-                Order Type
-                <select value={orderType} onChange={(e) => setOrderType(e.target.value as OrderType)}>
-                  {ORDER_TYPES.map((ot) => <option key={ot} value={ot}>{ot}</option>)}
-                </select>
-              </label>
-              <label>
-                Product
-                <select value={effectiveProduct} disabled={isDerivative} onChange={(e) => setProduct(e.target.value as ProductType)}>
-                  {isDerivative ? (
-                    <option value="NRML">NRML (Margin)</option>
-                  ) : (
-                    <>
-                      <option value="INTRADAY">Intraday (MIS)</option>
-                      <option value="DELIVERY">Delivery (CNC)</option>
-                    </>
-                  )}
-                </select>
-              </label>
-            </div>
-
+            {/* Core Uncluttered Controls: Quantity + Market/Limit Toggle */}
             <div className="nt-form-row">
               <label>
                 {instrument.lotSize > 1 ? `Lots (×${instrument.lotSize} = ${quantity})` : "Quantity"}
                 <input type="number" min={1} value={lots} onChange={(e) => setLots(Math.max(1, Number(e.target.value) || 1))} />
               </label>
               <label>
-                Validity (TIF)
-                <select value={tif} onChange={(e) => setTif(e.target.value as TimeInForce)}>
-                  <option value="DAY">DAY</option>
-                  <option value="GTC">GTC</option>
-                </select>
+                <span>
+                  Order Mode
+                  <InfoTip
+                    label="Limit Order"
+                    text="A Market order fills immediately at the current price; a Limit order waits to fill only at your chosen price or better."
+                  />
+                </span>
+                <div className="tg-mode-switch" style={{ width: "100%", justifyContent: "space-between", marginTop: 4 }}>
+                  <button
+                    type="button"
+                    className={`tg-mode-btn${orderType === "MARKET" ? " active" : ""}`}
+                    style={{ flex: 1 }}
+                    onClick={() => setOrderType("MARKET")}
+                  >
+                    Market
+                  </button>
+                  <button
+                    type="button"
+                    className={`tg-mode-btn${orderType !== "MARKET" ? " active" : ""}`}
+                    style={{ flex: 1 }}
+                    onClick={() => setOrderType(orderType === "MARKET" ? "LIMIT" : orderType)}
+                  >
+                    Limit
+                  </button>
+                </div>
               </label>
             </div>
-
-            {orderType === "AUTO-LIMIT" && (
-              <div className="nt-form-row">
-                <label>
-                  Offset % ({side === "BUY" ? "below" : "above"} LTP)
-                  <input type="number" step="0.1" min="0.1" value={autoOffsetPct} onChange={(e) => setAutoOffsetPct(Number(e.target.value) || 0.5)} />
-                </label>
-                <label>
-                  Wait Window (min)
-                  <input type="number" min={1} value={autoWaitMins} onChange={(e) => setAutoWaitMins(Number(e.target.value) || 5)} />
-                </label>
-              </div>
-            )}
 
             {(orderType === "LIMIT" || orderType === "SL") && (
               <label>
                 Limit Price (₹)
-                <input type="number" step={instrument.tickSize} required value={limitPrice} onChange={(e) => setLimitPrice(e.target.value)} placeholder={String(quote?.last ?? instrument.basePrice)} />
+                <input
+                  type="number"
+                  step={instrument.tickSize}
+                  required
+                  value={limitPrice}
+                  onChange={(e) => setLimitPrice(e.target.value)}
+                  placeholder={String(quote?.last ?? instrument.basePrice)}
+                />
               </label>
             )}
 
             {(orderType === "SL" || orderType === "SL-M") && (
               <label>
                 Trigger Price (₹)
-                <input type="number" step={instrument.tickSize} required value={triggerPrice} onChange={(e) => setTriggerPrice(e.target.value)} placeholder={String(quote?.last ?? instrument.basePrice)} />
+                <input
+                  type="number"
+                  step={instrument.tickSize}
+                  required
+                  value={triggerPrice}
+                  onChange={(e) => setTriggerPrice(e.target.value)}
+                  placeholder={String(quote?.last ?? instrument.basePrice)}
+                />
               </label>
             )}
 
-            <div className="nt-form-row">
-              <label>
-                Stop-Loss (₹)
-                <input
-                  type="number"
-                  step={instrument.tickSize}
-                  required={orderType === "BRACKET" || orderType === "COVER"}
-                  value={stopLossPrice}
-                  onChange={(e) => setStopLossPrice(e.target.value)}
-                  placeholder={`e.g. ${Math.round((quote?.last ?? instrument.basePrice) * (side === "BUY" ? 0.98 : 1.02))}`}
-                />
-              </label>
-              <label>
-                Target (₹)
-                <input
-                  type="number"
-                  step={instrument.tickSize}
-                  required={orderType === "BRACKET"}
-                  value={targetPrice}
-                  onChange={(e) => setTargetPrice(e.target.value)}
-                  placeholder={`e.g. ${Math.round((quote?.last ?? instrument.basePrice) * (side === "BUY" ? 1.03 : 0.97))}`}
-                />
-              </label>
-            </div>
-
-            <div className="nt-risk-helper">
-              <span>Risk Sizer:</span>
-              <select value={riskPctHelper} onChange={(e) => setRiskPctHelper(Number(e.target.value))}>
-                <option value={0.5}>0.5%</option>
-                <option value={1}>1.0%</option>
-                <option value={2}>2.0%</option>
-              </select>
-              <button type="button" className="nt-pill" onClick={applyRiskSizing} disabled={!stopLossPrice}>Calc Qty</button>
-            </div>
-
-            <div className="nt-form-row">
-              <label>
-                Strategy
-                <select value={strategy} onChange={(e) => setStrategy(e.target.value as StrategyTag)}>
-                  {STRATEGY_TAGS.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </label>
-              <label>
-                Pre-Trade Emotion
-                <select value={emotion} onChange={(e) => setEmotion(e.target.value as EmotionTag)}>
-                  {EMOTION_TAGS.map((em) => <option key={em} value={em}>{em}</option>)}
-                </select>
-              </label>
-            </div>
-
-            <div className="nt-form-row">
-              <label>
-                Confidence (1–5)
-                <select value={confidenceLevel} onChange={(e) => setConfidenceLevel(Number(e.target.value))}>
-                  {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n} / 5</option>)}
-                </select>
-              </label>
-              <label>
-                Entry Reasoning
-                <input type="text" maxLength={160} value={rationale} onChange={(e) => setRationale(e.target.value)} placeholder="Why this setup?" />
-              </label>
-            </div>
-
+            {/* Compact Order Summary */}
             <div className="nt-cost-preview">
-              <div><span>Margin Blocked</span><strong>{formatINR(requiredMargin)}</strong></div>
+              <div>
+                <span>Estimated Value</span>
+                <strong>{formatINR(quantity * (Number(limitPrice) > 0 ? Number(limitPrice) : (quote?.last ?? instrument.basePrice)))}</strong>
+              </div>
+              <div>
+                <span>
+                  Margin Blocked
+                  <InfoTip
+                    label="Margin Blocked"
+                    text="The virtual cash temporarily reserved to open this trade (intraday requires less margin than full delivery)."
+                  />
+                </span>
+                <strong>{formatINR(requiredMargin)}</strong>
+              </div>
+            </div>
+
+            {/* Progressive Disclosure: Advanced Options Accordion */}
+            <div>
+              <button
+                type="button"
+                className="tg-accordion-btn"
+                aria-expanded={advancedOpen}
+                onClick={() => setAdvancedOpen((v) => !v)}
+              >
+                <span>Advanced Options (SL, Target, Product &amp; Taxes)</span>
+                <span style={{ fontSize: 11, color: "#64748b" }}>{advancedOpen ? "▲" : "▼"}</span>
+              </button>
+              {advancedOpen && (
+                <div className="tg-accordion-body">
+                  <div className="nt-form-row">
+                    <label>
+                      Order Type
+                      <select value={orderType} onChange={(e) => setOrderType(e.target.value as OrderType)}>
+                        {ORDER_TYPES.map((ot) => <option key={ot} value={ot}>{ot}</option>)}
+                      </select>
+                    </label>
+                    <label>
+                      Product
+                      <select value={effectiveProduct} disabled={isDerivative} onChange={(e) => setProduct(e.target.value as ProductType)}>
+                        {isDerivative ? (
+                          <option value="NRML">NRML (Margin)</option>
+                        ) : (
+                          <>
+                            <option value="INTRADAY">Intraday (MIS)</option>
+                            <option value="DELIVERY">Delivery (CNC)</option>
+                          </>
+                        )}
+                      </select>
+                    </label>
+                  </div>
+
+                  {orderType === "AUTO-LIMIT" && (
+                    <div className="nt-form-row">
+                      <label>
+                        Offset % ({side === "BUY" ? "below" : "above"} LTP)
+                        <input type="number" step="0.1" min="0.1" value={autoOffsetPct} onChange={(e) => setAutoOffsetPct(Number(e.target.value) || 0.5)} />
+                      </label>
+                      <label>
+                        Wait Window (min)
+                        <input type="number" min={1} value={autoWaitMins} onChange={(e) => setAutoWaitMins(Number(e.target.value) || 5)} />
+                      </label>
+                    </div>
+                  )}
+
+                  <div className="nt-form-row">
+                    <label>
+                      Stop-Loss (₹)
+                      <input
+                        type="number"
+                        step={instrument.tickSize}
+                        required={orderType === "BRACKET" || orderType === "COVER"}
+                        value={stopLossPrice}
+                        onChange={(e) => setStopLossPrice(e.target.value)}
+                        placeholder={`e.g. ${Math.round((quote?.last ?? instrument.basePrice) * (side === "BUY" ? 0.98 : 1.02))}`}
+                      />
+                    </label>
+                    <label>
+                      Target (₹)
+                      <input
+                        type="number"
+                        step={instrument.tickSize}
+                        required={orderType === "BRACKET"}
+                        value={targetPrice}
+                        onChange={(e) => setTargetPrice(e.target.value)}
+                        placeholder={`e.g. ${Math.round((quote?.last ?? instrument.basePrice) * (side === "BUY" ? 1.03 : 0.97))}`}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="nt-risk-helper">
+                    <span>Risk Sizer:</span>
+                    <select value={riskPctHelper} onChange={(e) => setRiskPctHelper(Number(e.target.value))}>
+                      <option value={0.5}>0.5%</option>
+                      <option value={1}>1.0%</option>
+                      <option value={2}>2.0%</option>
+                    </select>
+                    <button type="button" className="nt-pill" onClick={applyRiskSizing} disabled={!stopLossPrice}>Calc Qty</button>
+                  </div>
+
+                  <div className="nt-form-row">
+                    <label>
+                      Validity (TIF)
+                      <select value={tif} onChange={(e) => setTif(e.target.value as TimeInForce)}>
+                        <option value="DAY">DAY</option>
+                        <option value="GTC">GTC</option>
+                      </select>
+                    </label>
+                    <label>
+                      Strategy
+                      <select value={strategy} onChange={(e) => setStrategy(e.target.value as StrategyTag)}>
+                        {STRATEGY_TAGS.map((s) => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="nt-form-row">
+                    <label>
+                      Pre-Trade Emotion
+                      <select value={emotion} onChange={(e) => setEmotion(e.target.value as EmotionTag)}>
+                        {EMOTION_TAGS.map((em) => <option key={em} value={em}>{em}</option>)}
+                      </select>
+                    </label>
+                    <label>
+                      Entry Reasoning
+                      <input type="text" maxLength={160} value={rationale} onChange={(e) => setRationale(e.target.value)} placeholder="Why this setup?" />
+                    </label>
+                  </div>
+
+                  {/* Detailed Indian Charges Breakdown with STT tooltip */}
+                  <div className="nt-cost-preview" style={{ background: "#f8fafc", padding: 10, borderRadius: 8 }}>
+                    <div>
+                      <span>
+                        {estCharges.sttLabel}
+                        <InfoTip
+                          label="STT"
+                          text="Securities Transaction Tax is a statutory Indian government levy charged on exchange equity and F&O trades."
+                        />
+                      </span>
+                      <strong>{formatINR(estCharges.sttOrCtt)}</strong>
+                    </div>
+                    <div><span>Exchange + SEBI + Stamp</span><strong>{formatINR(estCharges.exchangeCharges + estCharges.sebiFees + estCharges.stampDuty)}</strong></div>
+                    <div><span>GST (18%)</span><strong>{formatINR(estCharges.gst)}</strong></div>
+                    <div><span>Total Est. Charges</span><strong>{formatINR(estCharges.totalCharges)}</strong></div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="nt-cost-preview" style={{ display: "none" }}>
               <div><span>Est. Charges</span><strong>{formatINR(estCharges.totalCharges)}</strong></div>
               <div><span>Notional</span><strong>₹{(activePrice * quantity).toLocaleString("en-IN")}</strong></div>
             </div>

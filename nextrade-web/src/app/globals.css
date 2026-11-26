@@ -251,3 +251,604 @@
 .tv-delay-note{font-size:9px;color:#6f7e74;background:#f4f7f4;border:1px solid #e3ebe4;border-radius:999px;padding:2px 8px}
 .nt-watch-empty{padding:18px 12px;text-align:center;color:#6b7970;font-size:11px;border:1px dashed #d8e2da;border-radius:7px;display:grid;gap:8px;justify-items:center;margin-top:8px}
 button,input,select,textarea{font-family:inherit}
+
+/* ============================================================================
+   TradeGuru AI — Modern Fintech Design System (Zerodha Kite / Groww Aesthetic)
+   No glassmorphism, no neon glows, no heavy shadows, clean slate/white surfaces
+   ============================================================================ */
+:root {
+  --ink: #0f172a;
+  --d-ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --d-line: #e2e8f0;
+  --green: #059669;
+  --rose: #e11d48;
+  --blue: #2563eb;
+  --bg: #f8fafc;
+  --pale: #f8fafc;
+  --sans: var(--font-inter), 'Inter', var(--font-devanagari), 'Noto Sans Devanagari', system-ui, -apple-system, sans-serif;
+  --display: var(--font-inter), 'Inter', var(--font-devanagari), 'Noto Sans Devanagari', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabular numerals on all prices, P&L, KPIs, and table cells */
+.nt-kpi strong,
+.nt-ltp,
+.nt-delta,
+.nt-watch-price,
+.nt-depth-row,
+.nt-cost-preview strong,
+.api-market-table td,
+.sidebar-bottom strong,
+.tg-bluechip-price,
+.tg-bluechip-pct {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Slim 220px desktop sidebar */
+.dashboard-shell {
+  background: var(--bg);
+  min-height: 100vh;
+}
+.sidebar {
+  width: 220px;
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+}
+.dashboard-content {
+  margin-left: 220px;
+  background: var(--bg);
+}
+.dashboard-brand {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #059669;
+  margin: 0;
+  font-size: 14px;
+}
+.tg-sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 14px;
+}
+.tg-sidebar-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.tg-sidebar-brand-text strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.2px;
+}
+.tg-sidebar-brand-text small {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 500;
+}
+.side-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.nav-item {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.nav-item:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+.nav-item.selected {
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 600;
+}
+.tg-sidebar-footer {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sidebar-bottom {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #475569;
+}
+.sidebar-bottom strong {
+  color: #0f172a;
+}
+.sidebar-bottom small {
+  display: block;
+  color: #64748b;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+/* Clean Top Header */
+.dashboard-topbar {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  height: 60px;
+  padding: 0 24px;
+}
+.dashboard-main {
+  padding: 24px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+/* Simple / Pro Segmented Switch */
+.tg-mode-switch {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+.tg-mode-btn {
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.tg-mode-btn.active {
+  background: #ffffff;
+  color: #2563eb;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+/* Clean White Cards & Generous Grids */
+.surface-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px 24px;
+  box-shadow: none;
+}
+.nt-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.nt-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+.nt-kpi strong {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.4px;
+  margin: 6px 0 4px;
+  display: block;
+}
+.nt-kpi small {
+  color: #64748b;
+  font-size: 12px;
+}
+.card-kicker {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.card-heading h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+  letter-spacing: -0.2px;
+}
+.nt-pos {
+  color: #059669 !important;
+}
+.nt-neg {
+  color: #e11d48 !important;
+}
+
+/* Buttons: ONE solid primary CTA, outline/ghost secondary actions */
+.primary-button {
+  background: #059669;
+  color: #ffffff;
+  border: 1px solid #059669;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s;
+}
+.primary-button:hover {
+  background: #047857;
+}
+.primary-button.sell-cta {
+  background: #e11d48;
+  border-color: #e11d48;
+}
+.primary-button.sell-cta:hover {
+  background: #be123c;
+}
+.nt-pill,
+.subtle-button {
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.nt-pill:hover,
+.subtle-button:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+.nt-pill.active,
+.nt-seg-tab.active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
+  font-weight: 600;
+}
+.nt-pill.danger {
+  color: #e11d48;
+  border-color: #fecdd3;
+  background: #fff1f2;
+}
+.nt-free-badge {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 10px;
+}
+
+/* Horizontal Workspace Sub-Tabs */
+.tg-subtabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tg-subtab {
+  border: 1px solid transparent;
+  background: transparent;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: 8px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.tg-subtab:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+.tg-subtab.active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* Home Hero + Starter Strip + Blue-Chip Grid */
+.tg-home-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.tg-home-hero h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.4px;
+}
+.tg-home-hero p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 4px 0 0;
+}
+.tg-starter-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+.tg-starter-steps {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #334155;
+}
+.tg-starter-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.tg-step-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.tg-bluechip-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.tg-bluechip-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tg-bluechip-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.tg-bluechip-head strong {
+  font-size: 14px;
+  color: #0f172a;
+  display: block;
+}
+.tg-bluechip-head small {
+  font-size: 11px;
+  color: #64748b;
+}
+.tg-bluechip-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.tg-bluechip-pct {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Trade Terminal: Clean 2-Column (~68% / ~32%) + Collapsible Watchlist Drawer + Accordions */
+.nt-terminal-grid.tg-two-col {
+  display: grid;
+  grid-template-columns: minmax(0, 68fr) minmax(320px, 32fr);
+  gap: 20px;
+  align-items: start;
+}
+.nt-terminal-grid.tg-with-drawer {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr) 340px;
+  gap: 16px;
+  align-items: start;
+}
+.nt-side-btn.buy.active {
+  background: #059669;
+  color: #ffffff;
+  border-color: #059669;
+}
+.nt-side-btn.sell.active {
+  background: #e11d48;
+  color: #ffffff;
+  border-color: #e11d48;
+}
+.tg-accordion-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tg-accordion-btn:hover {
+  background: #f1f5f9;
+}
+.tg-accordion-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+  background: #ffffff;
+}
+
+/* Accessible Beginner "?" Tooltip */
+.tg-tip-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+.tg-tip-btn {
+  width: 15px;
+  height: 15px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+.tg-tip-btn:hover,
+.tg-tip-btn:focus-visible {
+  border-color: #2563eb;
+  color: #2563eb;
+  outline: none;
+}
+.tg-tip-bubble {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 230px;
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.45;
+  padding: 8px 10px;
+  border-radius: 8px;
+  z-index: 60;
+  pointer-events: none;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.tg-tip-bubble strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Overview Market Overview Height Clearance */
+.overview-market-card {
+  min-height: 510px;
+}
+.overview-market-card .tv-market-overview {
+  height: 445px;
+  min-height: 445px;
+}
+
+/* Mobile Bottom Nav */
+.tg-mobile-bottom-nav {
+  display: none;
+}
+@media (max-width: 1100px) {
+  .nt-kpi-grid,
+  .tg-bluechip-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .nt-terminal-grid.tg-two-col,
+  .nt-terminal-grid.tg-with-drawer {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+  .dashboard-content {
+    margin-left: 0;
+    padding-bottom: 68px;
+  }
+  .dashboard-main {
+    padding: 16px;
+  }
+  .tg-mobile-bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 60px;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    z-index: 50;
+    padding: 0 6px;
+  }
+  .tg-mobile-nav-btn {
+    border: 0;
+    background: transparent;
+    color: #64748b;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 8px;
+  }
+  .tg-mobile-nav-btn.active {
+    color: #2563eb;
+  }
+}

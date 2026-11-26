@@ -1,18 +1,11 @@
 import type { Metadata } from "next";
-import { DM_Sans, Manrope, Noto_Sans_Devanagari } from "next/font/google";
+import { Inter, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
 
-const dmSans = DM_Sans({
+const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-dm-sans",
-  display: "swap",
-});
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
-  variable: "--font-manrope",
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -24,17 +17,14 @@ const notoDevanagari = Noto_Sans_Devanagari({
 });
 
 export const metadata: Metadata = {
-  title: "TradeGuru AI — 100% Free Paper Trading Terminal & AI Trading Teacher",
+  title: "TradeGuru AI — 100% Free Indian Paper Trading & AI Coach",
   description:
-    "Professional Indian paper trading simulator (₹10,00,000 virtual capital, 10 timeframes, market depth, Options Chain, Basket Orders) with 16-Mistake AI Trading Teacher, 28-Course Bilingual Academy, Risk Center, Backtesting Lab, and 12-Report Download Center.",
+    "Modern Indian paper trading terminal (₹10,00,000 virtual capital, NSE/BSE/F&O/MCX simulation) with AI Trading Coach, 28-Course Bilingual Academy, Options Chain, Risk Center, and Backtesting Lab.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang="en"
-      className={`${dmSans.variable} ${manrope.variable} ${notoDevanagari.variable}`}
-    >
+    <html lang="en" className={`${inter.variable} ${notoDevanagari.variable}`}>
       <body>{children}</body>
     </html>
   );

@@ -54,7 +54,7 @@ function configFor(kind: WidgetKind, symbol?: string, interval?: string) {
       showSymbolLogo: true,
       showFloatingTooltip: false,
       width: "100%",
-      height: "100%",
+      height: 410,
       tabs: [
         { title: "Indian Equities (INR)", symbols: indianEquities.slice(1, 4) },
         { title: "Indian Indices", symbols: indianIndices },

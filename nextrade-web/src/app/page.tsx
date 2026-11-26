@@ -8,6 +8,7 @@ import { authRedirect, clearSupabaseConfig, getSavedSupabaseConfig, getSupabase,
 import { flushPendingSyncIfDue, pullAccountFromCloud, pushAccountToCloud, type CloudSyncStatus } from "@/lib/cloud-sync";
 import { TradingViewWidget } from "@/components/tradingview-widget";
 import { NavIcon } from "@/components/nav-icons";
+import { InfoTip } from "@/components/info-tip";
 import { formatINR, plural } from "@/lib/format";
 const ProTerminalView = dynamic(() => import("@/components/pro-terminal-view").then(m => m.ProTerminalView), { loading: () => <ViewSkeleton /> });
 const PortfolioView = dynamic(() => import("@/components/portfolio-view").then(m => m.PortfolioView), { loading: () => <ViewSkeleton /> });
@@ -128,6 +129,42 @@ const SLUG_TO_VIEW: Record<string, View> = Object.fromEntries(
   (Object.entries(VIEW_SLUGS) as [View, string][]).map(([v, slug]) => [slug, v])
 ) as Record<string, View>;
 
+type PrimaryNavKey = "Home" | "Trade" | "Portfolio" | "Learn" | "Pro Tools";
+type UiMode = "SIMPLE" | "PRO";
+
+const PORTFOLIO_SUBTABS: { label: string; view: View }[] = [
+  { label: "Positions & Orders", view: "Portfolio" },
+  { label: "Journal & Analytics", view: "Journal & Analytics" },
+  { label: "Reports Center", view: "Reports Center" },
+];
+
+const LEARN_SUBTABS: { label: string; view: View }[] = [
+  { label: "Bilingual Academy", view: "Academy" },
+  { label: "AI Teacher Coach", view: "AI Teacher" },
+];
+
+const PRO_TOOL_SUBTABS: { label: string; view: View; adminOnly?: boolean }[] = [
+  { label: "Options Chain", view: "Options Chain" },
+  { label: "Basket Orders", view: "Basket Orders" },
+  { label: "Screener", view: "Screener" },
+  { label: "Risk Center", view: "Risk Center" },
+  { label: "Backtesting Lab", view: "Backtesting Lab" },
+  { label: "Psychology & Challenges", view: "Psychology & Challenges" },
+  { label: "Watchlist & Alerts", view: "Watchlist & Alerts" },
+  { label: "Market Intel & Admin", view: "Market Intel & Admin", adminOnly: true },
+];
+
+const BLUE_CHIP_IDS = ["NSE:RELIANCE", "NSE:TCS", "NSE:HDFCBANK", "NSE:INFY"];
+
+function primaryNavForView(view: View): PrimaryNavKey | null {
+  if (view === "Overview") return "Home";
+  if (view === "Trade Terminal") return "Trade";
+  if (PORTFOLIO_SUBTABS.some((t) => t.view === view)) return "Portfolio";
+  if (LEARN_SUBTABS.some((t) => t.view === view)) return "Learn";
+  if (PRO_TOOL_SUBTABS.some((t) => t.view === view)) return "Pro Tools";
+  return null;
+}
+
 const descriptions: Record<View, string> = {
   Overview: "100% Free TradeGuru AI — ₹10,00,000 virtual capital, AI Teacher coaching, and live market observation.",
   "Trade Terminal": "Pro candlestick charts (10 timeframes), indicators, drawing tools, 10-level depth, partial fills & AI Teacher guardrails.",
@@ -196,6 +233,10 @@ export default function Home() {
   const [stagedBasketLegs, setStagedBasketLegs] = useState<BasketLegDraft[]>([]);
   const [isoBaskets, setIsoBaskets] = useState<ExecutedIsoBasket[]>([]);
   const lastCloudPayloadRef = useRef<string>("");
+  const [uiMode, setUiMode] = useState<UiMode>("SIMPLE");
+  const [starterDismissed, setStarterDismissed] = useState(false);
+  const [userRole, setUserRole] = useState<string>("student");
+  const isAdmin = ["admin", "super_admin", "compliance_auditor"].includes(userRole);
 
   // Sync activeView with ?view=<slug> URL parameter and browser Back/Forward buttons
   function navigateView(nextView: View) {
@@ -210,11 +251,21 @@ export default function Home() {
   }
 
   useEffect(() => {
+    try {
+      const savedMode = window.localStorage.getItem("tradeguru_ui_mode_v1");
+      if (savedMode === "PRO" || savedMode === "SIMPLE") setUiMode(savedMode);
+    } catch {
+      /* ignore */
+    }
     const readViewFromUrl = () => {
       const params = new URLSearchParams(window.location.search);
       const slug = params.get("view");
       if (slug && SLUG_TO_VIEW[slug]) {
-        setActiveView(SLUG_TO_VIEW[slug]);
+        const target = SLUG_TO_VIEW[slug];
+        setActiveView(target);
+        if (PRO_TOOL_SUBTABS.some((t) => t.view === target)) {
+          setUiMode("PRO");
+        }
       } else {
         setActiveView("Overview");
       }
@@ -223,6 +274,36 @@ export default function Home() {
     window.addEventListener("popstate", readViewFromUrl);
     return () => window.removeEventListener("popstate", readViewFromUrl);
   }, []);
+
+  function changeUiMode(next: UiMode) {
+    setUiMode(next);
+    try {
+      window.localStorage.setItem("tradeguru_ui_mode_v1", next);
+    } catch {
+      /* ignore */
+    }
+    if (next === "SIMPLE" && PRO_TOOL_SUBTABS.some((t) => t.view === activeView)) {
+      navigateView("Overview");
+    }
+  }
+
+  // Fetch authoritative user role from Supabase profiles to gate Admin UI
+  useEffect(() => {
+    if (!signedIn || !authUserId || !isSupabaseConfigured()) {
+      setUserRole("student");
+      return;
+    }
+    let cancelled = false;
+    void getSupabase()
+      .from("profiles")
+      .select("role")
+      .eq("id", authUserId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled && data?.role) setUserRole(String(data.role));
+      });
+    return () => { cancelled = true; };
+  }, [signedIn, authUserId]);
 
   // Auto-dismiss status toasts after 4 seconds
   useEffect(() => {
@@ -745,36 +826,64 @@ export default function Home() {
 
   return (
     <main className="dashboard-shell">
-      <aside className="sidebar" style={{ overflowY: "auto" }}>
-        <button className="dashboard-brand" onClick={() => navigateView("Overview")} aria-label="TradeGuru AI">
-          T<span>G</span>
-        </button>
-        <div className="sidebar-caption">TRADEGURU AI</div>
+      <aside className="sidebar">
+        <div className="tg-sidebar-header">
+          <button className="dashboard-brand" onClick={() => navigateView("Overview")} aria-label="TradeGuru AI">
+            T<span>G</span>
+          </button>
+          <div className="tg-sidebar-brand-text">
+            <strong>TradeGuru AI</strong>
+            <small>100% Free Paper Trading</small>
+          </div>
+        </div>
+
         <nav className="side-nav" aria-label="Main navigation">
-          {views.map((view) => (
-            <button
-              key={view}
-              className={`nav-item${activeView === view ? " selected" : ""}`}
-              onClick={() => navigateView(view)}
-              aria-current={activeView === view ? "page" : undefined}
-            >
-              <span className="nav-icon" aria-hidden="true"><NavIcon name={view} size={15} /></span>
-              {view}
-              {view === "AI Teacher" && teacherReport.mistakes.length > 0 && (
-                <span className="nav-soon">{teacherReport.mistakes.length}</span>
-              )}
-              {view === "Basket Orders" && stagedBasketLegs.length > 0 && (
-                <span className="nav-soon">{stagedBasketLegs.length}</span>
-              )}
-              {view === "Portfolio" && account.positions.length > 0 && (
-                <span className="nav-soon">{account.positions.length}</span>
-              )}
-            </button>
-          ))}
+          {(
+            [
+              { key: "Home" as PrimaryNavKey, view: "Overview" as View, badge: 0 },
+              { key: "Trade" as PrimaryNavKey, view: "Trade Terminal" as View, badge: 0 },
+              { key: "Portfolio" as PrimaryNavKey, view: "Portfolio" as View, badge: account.positions.length },
+              { key: "Learn" as PrimaryNavKey, view: "Academy" as View, badge: 0 },
+              ...(uiMode === "PRO"
+                ? [{ key: "Pro Tools" as PrimaryNavKey, view: "Options Chain" as View, badge: stagedBasketLegs.length }]
+                : []),
+            ]
+          ).map((item) => {
+            const isSelected = primaryNavForView(activeView) === item.key;
+            return (
+              <button
+                key={item.key}
+                className={`nav-item${isSelected ? " selected" : ""}`}
+                onClick={() => navigateView(item.view)}
+                aria-current={isSelected ? "page" : undefined}
+              >
+                <span className="nav-icon" aria-hidden="true"><NavIcon name={item.key} size={17} /></span>
+                <span>{item.key}</span>
+                {item.badge > 0 && <span className="nav-soon">{item.badge}</span>}
+              </button>
+            );
+          })}
         </nav>
-        <div className="sidebar-bottom">
-          <span className="service-dot" /> Equity: <strong>₹{Math.round(netEquity).toLocaleString("en-IN")}</strong>
-          <small>100% Free · Sim {simRunning ? "ON" : "Paused"}</small>
+
+        <div className="tg-sidebar-footer">
+          <button
+            className={`nav-item${activeView === "Profile" ? " selected" : ""}`}
+            onClick={() => navigateView("Profile")}
+          >
+            <span className="nav-icon" aria-hidden="true"><NavIcon name="Profile" size={16} /></span>
+            <span>Profile</span>
+          </button>
+          <button
+            className={`nav-item${activeView === "Settings" ? " selected" : ""}`}
+            onClick={() => navigateView("Settings")}
+          >
+            <span className="nav-icon" aria-hidden="true"><NavIcon name="Settings" size={16} /></span>
+            <span>Settings</span>
+          </button>
+          <div className="sidebar-bottom">
+            <span className="service-dot" /> Equity: <strong>{formatINR(netEquity, { decimals: 0 })}</strong>
+            <small>{cloudStatus === "SYNCED" ? "Cloud Synced ✓" : "Local Paper Mode"} · Sim {simRunning ? "ON" : "Paused"}</small>
+          </div>
         </div>
       </aside>
 
@@ -783,13 +892,27 @@ export default function Home() {
           <div className="mobile-brand">TradeGuru<span>AI</span></div>
           <div className="topbar-date">{today}</div>
           <div className="topbar-actions">
-            <span className="nt-free-badge">100% FREE FOREVER</span>
-            <span className="source-tag" title="Data source & cloud sync status">{liveFeedSource} · {cloudStatus === "SYNCED" ? "Cloud Synced ✓" : cloudStatus === "SYNCING" ? "Syncing…" : "Local Mode"}</span>
-            <button type="button" className={`nt-pill${teacherMode ? " active" : ""}`} onClick={() => setTeacherMode((v) => !v)}>
-              {teacherMode ? "AI Teacher: ON" : "AI Teacher: OFF"}
-            </button>
+            <div className="tg-mode-switch" role="group" aria-label="Interface Mode">
+              <button
+                type="button"
+                className={`tg-mode-btn${uiMode === "SIMPLE" ? " active" : ""}`}
+                onClick={() => changeUiMode("SIMPLE")}
+              >
+                Simple
+              </button>
+              <button
+                type="button"
+                className={`tg-mode-btn${uiMode === "PRO" ? " active" : ""}`}
+                onClick={() => changeUiMode("PRO")}
+              >
+                Pro
+              </button>
+            </div>
+            <span className="source-tag" title="Data source & cloud sync status">
+              {liveFeedSource} · {cloudStatus === "SYNCED" ? "Cloud Synced ✓" : cloudStatus === "SYNCING" ? "Syncing…" : "Local Mode"}
+            </span>
             <button type="button" className="nt-pill" aria-label="Notifications" onClick={() => setNotifOpen((v) => !v)} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-              <NavIcon name="Bell" size={14} /> {unreadNotifs > 0 ? unreadNotifs : ""}
+              <NavIcon name="Bell" size={16} /> {unreadNotifs > 0 ? unreadNotifs : ""}
             </button>
             {signedIn ? (
               <div className="account-chip">
@@ -797,8 +920,8 @@ export default function Home() {
                 <button className="subtle-button" onClick={signOut}>Sign out</button>
               </div>
             ) : (
-              <button className="primary-button" onClick={() => { setNotice(""); setAuthOpen(true); }}>
-                Sign in <span>↗</span>
+              <button className="nt-pill" onClick={() => { setNotice(""); setAuthOpen(true); }}>
+                Sign in
               </button>
             )}
           </div>
@@ -839,79 +962,215 @@ export default function Home() {
         )}
 
         <div className="dashboard-main">
-          <div className="page-heading">
-            <div>
-              <div className="eyebrow"><i /> TRADEGURU AI · EDUCATIONAL PAPER TRADING ECOSYSTEM</div>
-              <h1>
-                {activeView === "Overview"
-                  ? `Welcome back, ${studentName}`
-                  : activeView}
-              </h1>
-              <p>{descriptions[activeView]}</p>
+          {activeView !== "Overview" && (
+            <div className="page-heading" style={{ marginBottom: 14 }}>
+              <div>
+                <h1 style={{ fontSize: 20, margin: 0 }}>{activeView}</h1>
+                <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: 13 }}>{descriptions[activeView]}</p>
+              </div>
             </div>
-            <div className="nt-inline-actions">
-              {activeView !== "Trade Terminal" && (
-                <button className="primary-button" onClick={() => setActiveView("Trade Terminal")}>
-                  Open Pro Terminal →
+          )}
+
+          {primaryNavForView(activeView) === "Portfolio" && (
+            <div className="tg-subtabs" role="tablist" aria-label="Portfolio sections">
+              {PORTFOLIO_SUBTABS.map((t) => (
+                <button
+                  key={t.view}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeView === t.view}
+                  className={`tg-subtab${activeView === t.view ? " active" : ""}`}
+                  onClick={() => navigateView(t.view)}
+                >
+                  {t.label}
                 </button>
-              )}
-              <button type="button" className="nt-pill" onClick={() => setActiveView("Reports Center")}>
-                Download Reports
-              </button>
+              ))}
             </div>
-          </div>
+          )}
+
+          {primaryNavForView(activeView) === "Learn" && (
+            <div className="tg-subtabs" role="tablist" aria-label="Learn sections">
+              {LEARN_SUBTABS.map((t) => (
+                <button
+                  key={t.view}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeView === t.view}
+                  className={`tg-subtab${activeView === t.view ? " active" : ""}`}
+                  onClick={() => navigateView(t.view)}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {primaryNavForView(activeView) === "Pro Tools" && (
+            <div className="tg-subtabs" role="tablist" aria-label="Pro Tools sections">
+              {PRO_TOOL_SUBTABS.filter((t) => !t.adminOnly || isAdmin).map((t) => (
+                <button
+                  key={t.view}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeView === t.view}
+                  className={`tg-subtab${activeView === t.view ? " active" : ""}`}
+                  onClick={() => navigateView(t.view)}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           <WorkspaceErrorBoundary viewName={activeView}>
           {activeView === "Overview" && (
             <div className="nt-stack">
-              {account.adminConfig.announcements[0] && (
-                <article className="truth-card">
-                  <span className="truth-icon"><NavIcon name="Announcement" size={13} /></span>
-                  <div>
-                    <strong>Platform Announcement</strong>
-                    <p>{account.adminConfig.announcements[0]}</p>
-                  </div>
-                </article>
-              )}
+              {/* Clean Top Hero Row with ONE solid primary emerald CTA */}
+              <div className="tg-home-hero">
+                <div>
+                  <h1>Welcome back, {studentName}</h1>
+                  <p>Practice NSE/BSE trading with ₹10,00,000 virtual capital and real Indian fee formulas.</p>
+                </div>
+                <div className="nt-inline-actions">
+                  {account.journal.length === 0 && (
+                    <button
+                      type="button"
+                      className="nt-pill"
+                      onClick={() => {
+                        setAccount((prev) => ({
+                          ...prev,
+                          journal: buildRohitExampleJournal(),
+                        }));
+                        setNotice("Loaded sample demo portfolio into Journal & Analytics.");
+                      }}
+                    >
+                      Load Sample Portfolio
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={() => navigateView("Trade Terminal")}
+                  >
+                    {account.journal.length === 0 && account.positions.length === 0
+                      ? "Place First Trade"
+                      : "Open Trade Terminal"}
+                  </button>
+                </div>
+              </div>
 
+              {/* 4 Clean KPI Cards */}
               <div className="nt-kpi-grid">
                 <div className="surface-card nt-kpi">
-                  <span className="card-kicker">VIRTUAL EQUITY (DEFAULT ₹10L)</span>
-                  <strong>₹{Math.round(netEquity).toLocaleString("en-IN")}</strong>
-                  <small>Cash ₹{Math.round(account.availableCash).toLocaleString("en-IN")} · Refills: {account.resetCount}</small>
+                  <span className="card-kicker">VIRTUAL CASH</span>
+                  <strong>{formatINR(account.availableCash, { decimals: 0 })}</strong>
+                  <small>Default ₹10,00,000 · {plural(account.resetCount, "refill")}</small>
                 </div>
                 <div className="surface-card nt-kpi">
-                  <span className="card-kicker">UNREALIZED MTM P&amp;L</span>
+                  <span className="card-kicker">PORTFOLIO VALUE</span>
+                  <strong>{formatINR(netEquity, { decimals: 0 })}</strong>
+                  <small>Cash + open holdings mark-to-market</small>
+                </div>
+                <div className="surface-card nt-kpi">
+                  <span className="card-kicker">
+                    TODAY&apos;S P&amp;L
+                    <InfoTip
+                      label="MTM P&L"
+                      text="Mark-to-Market Profit & Loss shows live unrealized gains or losses on your open positions at current market prices."
+                    />
+                  </span>
                   <strong className={unrealizedPnl >= 0 ? "nt-pos" : "nt-neg"}>
                     {formatINR(unrealizedPnl, { signed: true })}
                   </strong>
-                  <small>{plural(account.positions.length, "position")} · {plural(isoBaskets.length, "ISO basket")}</small>
+                  <small>Live unrealized P&amp;L</small>
                 </div>
                 <div className="surface-card nt-kpi">
-                  <span className="card-kicker">AI TEACHER GRADE</span>
-                  <strong>
-                    {account.journal.length === 0
-                      ? "Unrated"
-                      : `${teacherReport.grade} · ${teacherReport.disciplineScore}/100`}
-                  </strong>
+                  <span className="card-kicker">OPEN POSITIONS</span>
+                  <strong>{account.positions.length}</strong>
                   <small>
-                    <button type="button" className="nt-link-btn" onClick={() => navigateView(account.journal.length === 0 ? "Trade Terminal" : "AI Teacher")}>
-                      {account.journal.length === 0
-                        ? "Place your first trade to unlock coaching →"
-                        : `${plural(teacherReport.mistakes.length, "coaching item")} →`}
-                    </button>
-                  </small>
-                </div>
-                <div className="surface-card nt-kpi">
-                  <span className="card-kicker">28-COURSE ACADEMY</span>
-                  <strong>{account.completedCourseIds.length} / 28 Courses</strong>
-                  <small>
-                    <button type="button" className="nt-link-btn" onClick={() => navigateView("Academy")}>
-                      Continue learning (EN / हिन्दी) →
+                    <button type="button" className="nt-link-btn" onClick={() => navigateView("Portfolio")}>
+                      {plural(account.orders.filter((o) => o.status === "OPEN").length, "pending order")} →
                     </button>
                   </small>
                 </div>
               </div>
+
+              {/* Dismissible 3-Step Starter Strip for Fresh 0-Trade Accounts */}
+              {account.journal.length === 0 && account.positions.length === 0 && !starterDismissed && (
+                <section className="tg-starter-strip" aria-label="Quick start guide">
+                  <div className="tg-starter-steps">
+                    <span className="tg-starter-step">
+                      <span className="tg-step-dot">1</span>
+                      Pick an Indian stock below
+                    </span>
+                    <span style={{ color: "#cbd5e1" }}>→</span>
+                    <span className="tg-starter-step">
+                      <span className="tg-step-dot">2</span>
+                      Place a simulated paper trade
+                    </span>
+                    <span style={{ color: "#cbd5e1" }}>→</span>
+                    <span className="tg-starter-step">
+                      <span className="tg-step-dot">3</span>
+                      Review AI Coach feedback
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="nt-pill"
+                    onClick={() => setStarterDismissed(true)}
+                    aria-label="Dismiss starter guide"
+                  >
+                    Dismiss ×
+                  </button>
+                </section>
+              )}
+
+              {/* Quick-Trade Blue-Chip Grid (RELIANCE, TCS, HDFCBANK, INFY) */}
+              <section aria-label="Popular Indian stocks">
+                <div className="card-heading" style={{ marginBottom: 10 }}>
+                  <div>
+                    <span className="card-kicker">QUICK TRADE · NSE BLUE CHIPS</span>
+                    <h2>Popular Indian Stocks</h2>
+                  </div>
+                  <button type="button" className="nt-pill" onClick={() => navigateView("Trade Terminal")}>
+                    All Instruments →
+                  </button>
+                </div>
+                <div className="tg-bluechip-grid">
+                  {BLUE_CHIP_IDS.map((id) => {
+                    const inst = PAPER_INSTRUMENTS.find((x) => x.id === id);
+                    if (!inst) return null;
+                    const q = quotes[inst.id];
+                    const ltp = q?.last ?? inst.basePrice;
+                    const pct = q?.changePercent ?? 0;
+                    const up = pct >= 0;
+                    return (
+                      <div key={inst.id} className="tg-bluechip-card">
+                        <div className="tg-bluechip-head">
+                          <div>
+                            <strong>{inst.symbol}</strong>
+                            <small>{inst.name}</small>
+                          </div>
+                          <span className={`tg-bluechip-pct ${up ? "nt-pos" : "nt-neg"}`}>
+                            {up ? "+" : ""}{pct.toFixed(2)}%
+                          </span>
+                        </div>
+                        <div className="tg-bluechip-price">{formatINR(ltp)}</div>
+                        <button
+                          type="button"
+                          className="nt-pill"
+                          onClick={() => {
+                            setSelectedInstrumentId(inst.id);
+                            navigateView("Trade Terminal");
+                          }}
+                        >
+                          Trade {inst.symbol}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
 
               <TradingViewWidget kind="ticker-tape" title="Market ticker" />
 
@@ -953,6 +1212,7 @@ export default function Home() {
                 }))
               }
               teacherMode={teacherMode}
+              uiMode={uiMode}
             />
           )}
 
@@ -1073,7 +1333,15 @@ export default function Home() {
             <ReportsCenterView studentName={studentName} account={account} />
           )}
 
-          {activeView === "Market Intel & Admin" && (
+          {activeView === "Market Intel & Admin" && !isAdmin && (
+            <section className="surface-card">
+              <span className="card-kicker">RESTRICTED ACCESS</span>
+              <h2>Admin Role Required</h2>
+              <p style={{ color: "#64748b", fontSize: 13 }}>Market Intel &amp; Admin Audit Console is restricted to authenticated administrators.</p>
+            </section>
+          )}
+
+          {activeView === "Market Intel & Admin" && isAdmin && (
             <MarketIntelAdminView
               account={account}
               quotes={quotes}
@@ -1275,6 +1543,21 @@ export default function Home() {
                       <option value="OFF">Disabled</option>
                     </select>
                   </label>
+                  <div className="nt-inline-actions" style={{ gridColumn: "1/-1", marginTop: 8 }}>
+                    <button
+                      type="button"
+                      className="nt-pill danger"
+                      onClick={() => {
+                        setAccount(createDefaultPaperState(DEFAULT_VIRTUAL_CAPITAL));
+                        setIsoBaskets([]);
+                        setStagedBasketLegs([]);
+                        setStarterDismissed(false);
+                        setNotice("Virtual account reset to clean ₹10,00,000 cash and 0 trades.");
+                      }}
+                    >
+                      Reset Virtual Account (₹10,00,000)
+                    </button>
+                  </div>
                 </div>
                 <div className="nt-inline-actions" style={{ marginTop: 14 }}>
                   <button
@@ -1332,6 +1615,31 @@ export default function Home() {
           </section>
         </div>
       )}
+      {/* Clean Mobile Bottom Navigation */}
+      <nav className="tg-mobile-bottom-nav" aria-label="Mobile navigation">
+        {(
+          [
+            { key: "Home" as PrimaryNavKey, view: "Overview" as View },
+            { key: "Trade" as PrimaryNavKey, view: "Trade Terminal" as View },
+            { key: "Portfolio" as PrimaryNavKey, view: "Portfolio" as View },
+            { key: "Learn" as PrimaryNavKey, view: "Academy" as View },
+            ...(uiMode === "PRO" ? [{ key: "Pro Tools" as PrimaryNavKey, view: "Options Chain" as View }] : []),
+          ]
+        ).map((item) => {
+          const active = primaryNavForView(activeView) === item.key;
+          return (
+            <button
+              key={item.key}
+              type="button"
+              className={`tg-mobile-nav-btn${active ? " active" : ""}`}
+              onClick={() => navigateView(item.view)}
+            >
+              <NavIcon name={item.key} size={18} />
+              <span>{item.key}</span>
+            </button>
+          );
+        })}
+      </nav>
     </main>
   );
 }
