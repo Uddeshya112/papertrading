@@ -1029,7 +1029,7 @@ export default function Home() {
                       onClick={() => {
                         setAccount((prev) => ({
                           ...prev,
-                          journal: buildRohitExampleJournal(),
+                          journal: [buildRohitExampleJournal(prev.brokeragePlan)],
                         }));
                         setNotice("Loaded sample demo portfolio into Journal & Analytics.");
                       }}
@@ -1079,7 +1079,7 @@ export default function Home() {
                   <strong>{account.positions.length}</strong>
                   <small>
                     <button type="button" className="nt-link-btn" onClick={() => navigateView("Portfolio")}>
-                      {plural(account.orders.filter((o) => o.status === "OPEN").length, "pending order")} →
+                      {plural(account.orders.filter((o) => o.status === "PENDING").length, "pending order")} →
                     </button>
                   </small>
                 </div>

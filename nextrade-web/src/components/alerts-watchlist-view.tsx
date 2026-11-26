@@ -87,8 +87,8 @@ export function AlertsWatchlistView({
                         <small>{inst.name}</small>
                       </th>
                       <td>{SEGMENT_LABELS[inst.segment]}</td>
-                      <td><strong>{formatINR(q?.last ?? inst.basePrice, { decimals: inst.segment === "CURRENCY" ? 4 : 2 })}</strong></td>
-                      <td>{formatINR(q?.bid ?? inst.basePrice, { decimals: inst.segment === "CURRENCY" ? 4 : 2 })} / {formatINR(q?.ask ?? inst.basePrice, { decimals: inst.segment === "CURRENCY" ? 4 : 2 })}</td>
+                      <td><strong>{formatINR(q?.last ?? inst.basePrice, { decimals: inst.segment === "NSE_CURRENCY" ? 4 : 2 })}</strong></td>
+                      <td>{formatINR(q?.bid ?? inst.basePrice, { decimals: inst.segment === "NSE_CURRENCY" ? 4 : 2 })} / {formatINR(q?.ask ?? inst.basePrice, { decimals: inst.segment === "NSE_CURRENCY" ? 4 : 2 })}</td>
                       <td className={up ? "nt-pos" : "nt-neg"}>
                         {up ? "+" : ""}
                         {q?.changePercent.toFixed(2)}%
