@@ -1,0 +1,10 @@
+target/
+.idea/
+.vscode/
+*.iml
+*.log
+.env
+node_modules/
+.next/
+out/
+nextrade-web/.env.local

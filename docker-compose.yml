@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: nextrade
+      POSTGRES_USER: nextrade
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the environment}
+    ports: ["5432:5432"]
+    healthcheck: {test: ["CMD-SHELL","pg_isready -U nextrade -d nextrade"], interval: 5s, timeout: 3s, retries: 20}
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+  api:
+    build:
+      context: .
+      dockerfile: nextrade-api/Dockerfile
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_started}
+    environment:
+      DB_HOST: postgres
+      DB_NAME: nextrade
+      DB_USER: nextrade
+      DB_PASS: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the environment}
+      REDIS_HOST: redis
+      SUPABASE_URL: ${SUPABASE_URL:?Set SUPABASE_URL in .env}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY:?Set SUPABASE_PUBLISHABLE_KEY in .env}
+      NEXTRADE_WEB_URL: ${NEXTRADE_WEB_URL:-http://localhost:3000}
+    ports: ["8080:8080"]
