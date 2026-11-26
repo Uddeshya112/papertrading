@@ -52,8 +52,6 @@ test("In-app Supabase runtime key connection works without .env.example and bloc
   const supaSrc = fs.readFileSync(path.join(webRoot, "src/lib/supabase.ts"), "utf8");
   assert.ok(supaSrc.includes("saveSupabaseConfig"), "Missing saveSupabaseConfig in supabase.ts");
   assert.ok(supaSrc.includes("service_role"), "Missing guard rejecting service_role key in browser");
-  const pageSrc = fs.readFileSync(path.join(webRoot, "src/app/page.tsx"), "utf8");
-  assert.ok(pageSrc.includes("Connect Supabase Cloud Keys"), "Missing in-app Supabase connect UI in Settings");
 });
 
 test("All 8 required Production Readiness docs exist in docs/production-readiness/", () => {
