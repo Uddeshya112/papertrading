@@ -572,19 +572,33 @@ export function placePaperOrder(
   if ((input.orderType === "SL" || input.orderType === "SL-M") && (!input.triggerPrice || input.triggerPrice <= 0)) {
     return { state, ok: false, message: "Enter a valid Trigger price." };
   }
+  // Find any existing opposite-side position for the same instrument (preferring exact product match)
+  const oppositeSide: OrderSide = input.side === "BUY" ? "SELL" : "BUY";
+  const closingPosition =
+    state.positions.find(
+      (p) => p.instrumentId === instrument.id && p.side === oppositeSide && p.product === input.product
+    ) ??
+    (input.side === "SELL"
+      ? state.positions.find((p) => p.instrumentId === instrument.id && p.side === "BUY")
+      : undefined);
+
   if (
     input.side === "SELL" &&
     input.product === "DELIVERY" &&
     (instrument.segment === "NSE_EQUITY" || instrument.segment === "BSE_EQUITY")
   ) {
-    const existingLong = state.positions.find(
-      (p) => p.instrumentId === instrument.id && p.side === "BUY" && p.product === "DELIVERY"
-    );
-    if (!existingLong) {
+    if (!closingPosition) {
       return {
         state,
         ok: false,
         message: "Short selling is allowed in Intraday (MIS) or F&O, not Delivery (CNC).",
+      };
+    }
+    if (quantity > closingPosition.quantity) {
+      return {
+        state,
+        ok: false,
+        message: `You only own ${closingPosition.quantity} ${instrument.symbol} (${closingPosition.product}). Reduce sell quantity to ${closingPosition.quantity} or less.`,
       };
     }
   }
@@ -617,7 +631,8 @@ export function placePaperOrder(
     brokeragePlan: state.brokeragePlan,
   }).totalCharges;
 
-  if (requiredMargin + estCharges > state.availableCash) {
+  const isClosingExisting = Boolean(closingPosition && quantity <= closingPosition.quantity);
+  if (!isClosingExisting && requiredMargin + estCharges > state.availableCash) {
     const rejectedState = pushNotification(state, {
       category: "ORDER",
       title: "Order Rejected — Insufficient Virtual Margin",
@@ -769,6 +784,103 @@ function executeFill(
     filledAt: now,
   };
 
+  // Close or reduce existing opposite-side position cleanly (handles SELL of owned shares & BUY-to-cover)
+  const oppositeSide: OrderSide = input.side === "BUY" ? "SELL" : "BUY";
+  const targetPos =
+    state.positions.find(
+      (p) => p.instrumentId === instrument.id && p.side === oppositeSide && p.product === input.product
+    ) ??
+    (input.side === "SELL"
+      ? state.positions.find((p) => p.instrumentId === instrument.id && p.side === "BUY")
+      : undefined);
+
+  if (targetPos) {
+    const closeQty = Math.min(fillQuantity, targetPos.quantity);
+    const ratio = closeQty / targetPos.quantity;
+    const releasedMargin = round2(targetPos.marginBlocked * ratio);
+    const allocatedEntryCharges = round2(targetPos.entryCharges * ratio);
+    const grossPnl = round2(
+      (targetPos.side === "BUY" ? fillPrice - targetPos.entryPrice : targetPos.entryPrice - fillPrice) * closeQty
+    );
+    const totalRoundTripCharges = round2(allocatedEntryCharges + charges);
+    const netPnl = round2(grossPnl - totalRoundTripCharges);
+    const remainingQty = targetPos.quantity - closeQty;
+
+    const journalEntry: JournalTrade = {
+      id: `TRD-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 900 + 100)}`,
+      instrumentId: targetPos.instrumentId,
+      symbol: targetPos.symbol,
+      exchange: targetPos.exchange,
+      segment: targetPos.segment,
+      side: targetPos.side,
+      product: targetPos.product,
+      quantity: closeQty,
+      entryPrice: targetPos.entryPrice,
+      exitPrice: fillPrice,
+      plannedStopLoss: targetPos.stopLossPrice,
+      plannedTarget: targetPos.targetPrice,
+      grossPnl,
+      charges: totalRoundTripCharges,
+      netPnl,
+      exitReason: "MANUAL",
+      followedStopLoss: true,
+      strategy: targetPos.strategy,
+      emotion: targetPos.emotion,
+      confidenceLevel: targetPos.confidenceLevel,
+      regime: input.regime,
+      rationale: targetPos.rationale,
+      exitReasoning: remainingQty > 0 ? `Partial exit (${closeQty} of ${targetPos.quantity})` : "Manual exit via Trade Terminal",
+      reflection: "",
+      openedAt: targetPos.openedAt,
+      closedAt: now,
+    };
+
+    const updatedPositions =
+      remainingQty <= 0
+        ? state.positions.filter((p) => p.id !== targetPos.id)
+        : state.positions.map((p) =>
+            p.id === targetPos.id
+              ? {
+                  ...p,
+                  quantity: remainingQty,
+                  lots: Math.max(1, Math.round(remainingQty / instrument.lotSize)),
+                  marginBlocked: round2(p.marginBlocked - releasedMargin),
+                  entryCharges: round2(p.entryCharges - allocatedEntryCharges),
+                }
+              : p
+          );
+
+    const exitOrderRecord: PaperOrder = {
+      ...orderRecord,
+      product: targetPos.product,
+      quantity: closeQty,
+      filledQuantity: closeQty,
+    };
+
+    let closedState: PaperAccountState = {
+      ...state,
+      availableCash: round2(state.availableCash + releasedMargin + grossPnl - charges),
+      positions: updatedPositions,
+      orders: [exitOrderRecord, ...state.orders],
+      journal: [journalEntry, ...state.journal],
+    };
+
+    const fmtPrice = fillPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmtCharges = charges.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmtNet = `${netPnl >= 0 ? "+" : "-"}₹${Math.abs(netPnl).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    closedState = pushNotification(closedState, {
+      category: "ORDER",
+      title: remainingQty > 0 ? "Partial Position Sold" : "Position Closed",
+      message: `${input.side} ${closeQty} ${instrument.symbol} @ ₹${fmtPrice} · Net P&L ${fmtNet} (Exit charges ₹${fmtCharges}).`,
+    });
+
+    return {
+      state: closedState,
+      ok: true,
+      message: `${input.side} ${closeQty} ${instrument.symbol} @ ₹${fmtPrice} · Net P&L ${fmtNet} (Charges ₹${fmtCharges}).`,
+    };
+  }
+
   const position: PaperPosition = {
     id: `POS-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 900 + 100)}`,
     instrumentId: instrument.id,
@@ -812,7 +924,7 @@ function executeFill(
     ok: true,
     message: isPartial
       ? `Partial fill: ${fillQuantity}/${totalQuantity} ${instrument.symbol} @ ₹${fillPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Remainder queued.`
-      : `Filled ${input.side} ${fillQuantity} ${instrument.symbol} @ ₹${fillPrice.toLocaleString("en-IN")} (Charges ₹${charges}).`,
+      : `Filled ${input.side} ${fillQuantity} ${instrument.symbol} @ ₹${fillPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Charges ₹${charges.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}).`,
   };
 }
 
