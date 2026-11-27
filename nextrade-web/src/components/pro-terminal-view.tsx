@@ -758,6 +758,10 @@ export function ProTerminalView({
               </div>
             </div>
 
+            <button type="submit" className={`nt-submit-order ${side === "BUY" ? "buy" : "sell"}`}>
+              {side} {quantity} {getDynamicInstrumentDisplay(instrument, quotes).symbol} ({orderType})
+            </button>
+
             {/* Progressive Disclosure: Advanced Options Accordion */}
             <div>
               <button
@@ -900,9 +904,6 @@ export function ProTerminalView({
               </div>
             )}
 
-            <button type="submit" className={`nt-submit-order ${side === "BUY" ? "buy" : "sell"}`}>
-              {side} {quantity} {getDynamicInstrumentDisplay(instrument, quotes).symbol} ({orderType})
-            </button>
           </form>
         </aside>
       </div>

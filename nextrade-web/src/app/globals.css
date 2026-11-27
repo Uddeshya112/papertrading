@@ -880,3 +880,19 @@ textarea.nt-input-sm {
   line-height: 1.4;
   overflow-y: auto;
 }
+
+/* Ensure Order Ticket & Advanced Options never clip the BUY/SELL submit button */
+.nt-order-ticket {
+  overflow: visible !important;
+  align-self: start;
+}
+.tg-accordion-body {
+  max-height: none !important;
+  overflow: visible !important;
+}
+.nt-submit-order {
+  position: sticky;
+  bottom: 12px;
+  z-index: 5;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.14);
+}
