@@ -31,6 +31,7 @@ export type TimeInForce = "DAY" | "GTC";
 export type OrderStatus = "PENDING" | "PARTIALLY_FILLED" | "FILLED" | "CANCELLED" | "REJECTED";
 
 export type StrategyTag =
+  | "Positional / Delivery"
   | "Intraday Breakout"
   | "Scalping"
   | "VWAP Trend"
@@ -45,6 +46,7 @@ export type StrategyTag =
 export type EmotionTag = "Disciplined" | "Calm" | "Confident" | "FOMO" | "Hesitant" | "Revenge" | "Fearful" | "Greedy";
 
 export const STRATEGY_TAGS: StrategyTag[] = [
+  "Positional / Delivery",
   "Intraday Breakout",
   "Scalping",
   "VWAP Trend",

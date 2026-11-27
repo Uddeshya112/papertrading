@@ -4,9 +4,11 @@ import { useMemo, useState } from "react";
 import {
   getInstrumentById,
   PAPER_INSTRUMENTS,
+  getDynamicInstrumentDisplay,
   type LiveQuote,
   type MarketSegment,
 } from "@/lib/paper-instruments";
+
 import type { OrderSide, PaperAccountState } from "@/lib/paper-engine";
 import { formatINR, plural } from "@/lib/format";
 
@@ -236,13 +238,13 @@ export function BasketOrdersView({
             <select value={newInstId} onChange={(e) => setNewInstId(e.target.value)}>
               {PAPER_INSTRUMENTS.map((i) => (
                 <option key={i.id} value={i.id}>
-                  {i.symbol} (₹{(quotes[i.id]?.last ?? i.basePrice).toLocaleString("en-IN")})
+                  {getDynamicInstrumentDisplay(i, quotes).symbol} (₹{(quotes[i.id]?.last ?? i.basePrice).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                 </option>
               ))}
             </select>
           </label>
           <label style={{ minWidth: 152 }}>
-            Side &amp; Lots
+            {(PAPER_INSTRUMENTS.find((x) => x.id === newInstId)?.lotSize ?? 1) === 1 ? "Side & Qty (Shares)" : `Side & Lots (×${PAPER_INSTRUMENTS.find((x) => x.id === newInstId)?.lotSize ?? 1})`}
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap" }}>
               <select style={{ minWidth: 74 }} value={newSide} onChange={(e) => setNewSide(e.target.value as OrderSide)}>
                 <option value="BUY">BUY</option>

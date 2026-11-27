@@ -852,3 +852,23 @@ body {
     color: #2563eb;
   }
 }
+
+/* Audit Pass 4 UI Polish (#15, #16) */
+.tg-bluechip-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.tg-bluechip-head > div {
+  min-width: 0;
+  flex: 1;
+}
+.tg-bluechip-head small {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

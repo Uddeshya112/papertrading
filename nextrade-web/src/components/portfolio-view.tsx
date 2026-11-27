@@ -50,6 +50,7 @@ export function PortfolioView({
   const dailyPnl = dailyRealized + unrealizedPnl;
   const netEquity = account.availableCash + usedMargin + unrealizedPnl;
   const buyingPower = account.availableCash * 5; // Up to 5x intraday MIS buying power
+  const pastOrders = account.orders.filter((o) => o.status !== "PENDING" && o.status !== "PARTIALLY_FILLED").slice(0, 25);
   const pendingOrders = account.orders.filter(
     (o) => o.status === "PENDING" || o.status === "PARTIALLY_FILLED"
   );
@@ -61,7 +62,7 @@ export function PortfolioView({
         <div className="surface-card nt-kpi">
           <span className="card-kicker">TOTAL ACCOUNT EQUITY</span>
           <strong>₹{Math.round(netEquity).toLocaleString("en-IN")}</strong>
-          <small>Default ₹{DEFAULT_VIRTUAL_CAPITAL.toLocaleString("en-IN")} · Refills: {account.resetCount}</small>
+          <small>Default {formatINR(DEFAULT_VIRTUAL_CAPITAL)} · Refills: {account.resetCount}</small>
         </div>
         <div className="surface-card nt-kpi">
           <span className="card-kicker">AVAILABLE CASH / BUYING POWER</span>
@@ -184,7 +185,7 @@ export function PortfolioView({
                       {editingOrderId === ord.id ? (
                         <input type="number" className="nt-input-sm" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} />
                       ) : (
-                        <>₹{ord.limitPrice ?? ord.triggerPrice ?? ord.filledPrice}</>
+                        {formatINR(ord.limitPrice ?? ord.triggerPrice ?? ord.filledPrice ?? 0)}
                       )}
                     </td>
                     <td><span className="quote-mode simulated">{ord.status}</span></td>
@@ -198,6 +199,42 @@ export function PortfolioView({
                         <button type="button" className="nt-pill danger" onClick={() => onCancelOrder(ord.id)}>Cancel</button>
                       </div>
                     </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+
+      {/* Executed & Past Orders History (Audit Trail) */}
+      <section className="surface-card">
+        <div className="card-heading">
+          <div>
+            <span className="card-kicker">ORDER &amp; EXECUTION AUDIT LOG</span>
+            <h2>Executed &amp; Past Orders ({pastOrders.length})</h2>
+          </div>
+        </div>
+        {pastOrders.length === 0 ? (
+          <p className="market-api-muted">No executed, cancelled, or rejected orders yet.</p>
+        ) : (
+          <div className="api-market-table-wrap">
+            <table className="api-market-table">
+              <thead>
+                <tr><th>Time</th><th>Symbol</th><th>Side / Type</th><th>Product</th><th>Qty</th><th>Fill Price</th><th>Charges</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                {pastOrders.map((ord) => (
+                  <tr key={ord.id}>
+                    <td><time>{new Date(ord.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</time></td>
+                    <th scope="row"><strong>{ord.symbol}</strong></th>
+                    <td><span className={`nt-badge ${ord.side === "BUY" ? "buy" : "sell"}`}>{ord.side}</span> {ord.orderType}</td>
+                    <td>{ord.product}</td>
+                    <td className="tabular-nums">{ord.filledQuantity || ord.quantity}</td>
+                    <td className="tabular-nums">{formatINR(ord.filledPrice ?? ord.limitPrice ?? ord.triggerPrice ?? 0)}</td>
+                    <td className="tabular-nums">{formatINR(ord.charges ?? 0)}</td>
+                    <td><span className="quote-mode simulated">{ord.status}</span></td>
                   </tr>
                 ))}
               </tbody>
@@ -225,9 +262,9 @@ export function PortfolioView({
                   <tr key={r.id}>
                     <td><time>{new Date(r.date).toLocaleString("en-IN")}</time></td>
                     <td><span className="source-tag">{r.mode}</span></td>
-                    <td>₹{r.balanceBefore.toLocaleString("en-IN")}</td>
-                    <td className="nt-pos">+₹{r.amountAdded.toLocaleString("en-IN")}</td>
-                    <td><strong>₹{r.balanceAfter.toLocaleString("en-IN")}</strong></td>
+                    <td className="tabular-nums">{formatINR(r.balanceBefore)}</td>
+                    <td className="nt-pos tabular-nums">{formatINR(r.amountAdded, { signed: true })}</td>
+                    <td className="tabular-nums"><strong>{formatINR(r.balanceAfter)}</strong></td>
                     <td>{r.reason}</td>
                   </tr>
                 ))}
@@ -272,8 +309,8 @@ function PositionsTable({
                 </th>
                 <td><span className={`nt-badge ${pos.side === "BUY" ? "buy" : "sell"}`}>{pos.side}</span> {pos.product}</td>
                 <td>{pos.quantity}</td>
-                <td>₹{pos.entryPrice.toLocaleString("en-IN")}</td>
-                <td>₹{ltp.toLocaleString("en-IN")}</td>
+                <td>{formatINR(pos.entryPrice)}</td>
+                <td>{formatINR(ltp)}</td>
                 <td>{pos.stopLossPrice ? `SL ₹${pos.stopLossPrice}` : "—"} / {pos.targetPrice ? `T ₹${pos.targetPrice}` : "—"}</td>
                 <td className={pnl >= 0 ? "nt-pos" : "nt-neg"}><strong>{formatINR(pnl, { signed: true })}</strong></td>
                 <td><button type="button" className="nt-pill danger" onClick={() => onClosePosition(pos.id, ltp)}>Exit</button></td>

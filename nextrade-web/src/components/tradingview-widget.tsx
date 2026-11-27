@@ -137,7 +137,13 @@ export function TradingViewWidget({
     });
     observer.observe(target, { childList: true, subtree: true });
 
-    const fallbackTimer = window.setTimeout(() => setLoading(false), 3200);
+    const fallbackTimer = window.setTimeout(() => {
+      const iframe = target.querySelector("iframe");
+      if (!iframe) {
+        setLoadError(true);
+      }
+      setLoading(false);
+    }, 5000);
 
     target.append(container, script);
     return () => {

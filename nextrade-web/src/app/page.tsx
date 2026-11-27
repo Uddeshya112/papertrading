@@ -56,6 +56,8 @@ import {
 } from "@/lib/paper-engine";
 import {
   createInitialQuotes,
+  loadSessionQuotes,
+  saveSessionQuotes,
   PAPER_INSTRUMENTS,
   stepMarketQuotes,
   type LiveQuote,
@@ -171,7 +173,7 @@ const descriptions: Record<View, string> = {
   "Reports Center": "Download all 12 reports or the complete full-account bundle in PDF, CSV, or Excel format.",
   "Market Intel & Admin": "NIFTY 50, BANK NIFTY, SENSEX, breadth, macro calendar, news & immutable admin audit console.",
   "Watchlist & Alerts": "Personal saved watchlist and live price alerts.",
-  Profile: "View and update your Supabase account profile.",
+  Profile: "View and update your account profile.",
   Settings: "Configure order confirmation, auto-refill threshold, brokerage plan, slippage & notification preferences.",
 };
 
@@ -215,7 +217,7 @@ export default function Home() {
     createDefaultPaperState(DEFAULT_VIRTUAL_CAPITAL)
   );
   const [hydrated, setHydrated] = useState(false);
-  const [quotes, setQuotes] = useState<Record<string, LiveQuote>>(() => createInitialQuotes());
+  const [quotes, setQuotes] = useState<Record<string, LiveQuote>>(() => loadSessionQuotes());
   const [selectedInstrumentId, setSelectedInstrumentId] = useState<string>(PAPER_INSTRUMENTS[0].id);
   const [regime, setRegime] = useState<MarketRegime>("BULL");
   const [simRunning, setSimRunning] = useState(true);
@@ -407,6 +409,11 @@ export default function Home() {
     const interval = window.setInterval(() => void syncPublicQuotes(), pollMs);
     return () => { active = false; window.clearInterval(interval); };
   }, []);
+
+  // Persist latest quote snapshot across page reloads (#13)
+  useEffect(() => {
+    saveSessionQuotes(quotes);
+  }, [quotes]);
 
   // Live tick loop (1.8s)
   useEffect(() => {
@@ -1022,21 +1029,7 @@ export default function Home() {
                   <p>Practice NSE/BSE trading with ₹10,00,000 virtual capital and real Indian fee formulas.</p>
                 </div>
                 <div className="nt-inline-actions">
-                  {account.journal.length === 0 && (
-                    <button
-                      type="button"
-                      className="nt-pill"
-                      onClick={() => {
-                        setAccount((prev) => ({
-                          ...prev,
-                          journal: [buildRohitExampleJournal(prev.brokeragePlan)],
-                        }));
-                        setNotice("Loaded sample demo portfolio into Journal & Analytics.");
-                      }}
-                    >
-                      Load Sample Portfolio
-                    </button>
-                  )}
+
                   <button
                     type="button"
                     className="primary-button"
@@ -1059,7 +1052,7 @@ export default function Home() {
                 <div className="surface-card nt-kpi">
                   <span className="card-kicker">PORTFOLIO VALUE</span>
                   <strong>{formatINR(usedMargin + unrealizedPnl, { decimals: 0 })}</strong>
-                  <small>Current value of open holdings & positions</small>
+                  <small>Current value of open holdings &amp; positions</small>
                 </div>
                 <div className="surface-card nt-kpi">
                   <span className="card-kicker">
@@ -1119,7 +1112,7 @@ export default function Home() {
               <section aria-label="Popular Indian stocks">
                 <div className="card-heading" style={{ marginBottom: 10 }}>
                   <div>
-                    <span className="card-kicker">QUICK TRADE · NSE BLUE CHIPS</span>
+                    <span className="card-kicker">QUICK TRADE · {liveFeedSource.toUpperCase()}</span>
                     <h2>Popular Indian Stocks</h2>
                   </div>
                   <button type="button" className="nt-pill" onClick={() => navigateView("Trade Terminal")}>
@@ -1168,7 +1161,7 @@ export default function Home() {
                 <article className="surface-card chart-card">
                   <div className="card-heading">
                     <div><span className="card-kicker">ATTRIBUTED MARKET CHART</span><h2>Live Market Chart</h2></div>
-                    <span className="source-tag">TradingView</span>
+                    <span className="source-tag">External Reference (TradingView EOD)</span>
                   </div>
                   <TradingViewWidget kind="advanced-chart" title="Interactive stock market chart" />
                 </article>
@@ -1404,7 +1397,7 @@ export default function Home() {
                 </form>
               ) : (
                 <>
-                  <p>You are in 100% Free Local Paper Mode. Sign in with Supabase anytime to sync your profile.</p>
+                  <p>You are in 100% Free Local Paper Mode. Sign in anytime to sync your portfolio, watchlist, and journal across devices.</p>
                   <button className="primary-button" onClick={() => setAuthOpen(true)}>Sign in <span>↗</span></button>
                 </>
               )}
@@ -1456,6 +1449,36 @@ export default function Home() {
                     >
                       <option value="ON">Enabled ({account.slippageBps} bps)</option>
                       <option value="OFF">Disabled</option>
+                    </select>
+                  </label>
+                                    <label>
+                    Order Fill Notifications
+                    <select
+                      value={account.notificationPrefs.orderExecutions ? "ON" : "OFF"}
+                      onChange={(e) =>
+                        setAccount((p) => ({
+                          ...p,
+                          notificationPrefs: { ...p.notificationPrefs, orderExecutions: e.target.value === "ON" },
+                        }))
+                      }
+                    >
+                      <option value="ON">Enabled (Show Execution Toasts)</option>
+                      <option value="OFF">Muted</option>
+                    </select>
+                  </label>
+                  <label>
+                    Price Alert Notifications
+                    <select
+                      value={account.notificationPrefs.priceAlerts ? "ON" : "OFF"}
+                      onChange={(e) =>
+                        setAccount((p) => ({
+                          ...p,
+                          notificationPrefs: { ...p.notificationPrefs, priceAlerts: e.target.value === "ON" },
+                        }))
+                      }
+                    >
+                      <option value="ON">Enabled (Notify on Alert Trigger)</option>
+                      <option value="OFF">Muted</option>
                     </select>
                   </label>
                   <div className="nt-inline-actions" style={{ gridColumn: "1/-1", marginTop: 8 }}>
@@ -1522,9 +1545,39 @@ export default function Home() {
             {verificationRequired && !forgotPassword && (
               <p className="switch-auth"><button disabled={busy} onClick={resendVerification}>Resend confirmation email</button></p>
             )}
+            {!forgotPassword && !registering && (
+              <p className="switch-auth" style={{ marginBottom: 6 }}>
+                <button type="button" onClick={() => { setForgotPassword(true); setNotice(""); }}>
+                  Forgot password? Reset via email
+                </button>
+              </p>
+            )}
+            {!forgotPassword && (
+              <button
+                type="button"
+                className="nt-pill"
+                style={{ width: "100%", justifyContent: "center", padding: "9px 12px", marginBottom: 8 }}
+                disabled={busy}
+                onClick={async () => {
+                  if (!isSupabaseConfigured()) {
+                    setNotice("Cloud sign-in is not configured in this environment.");
+                    return;
+                  }
+                  setBusy(true);
+                  const { error } = await getSupabase().auth.signInWithOAuth({
+                    provider: "google",
+                    options: { redirectTo: `${window.location.origin}/auth/callback` },
+                  });
+                  if (error) setNotice(error.message);
+                  setBusy(false);
+                }}
+              >
+                Continue with Google
+              </button>
+            )}
             <p className="switch-auth">
-              <button onClick={() => { setRegistering(!registering); setForgotPassword(false); setNotice(""); }}>
-                {registering ? "Already have an account? Sign in" : "New to TradeGuru AI? Create free account"}
+              <button type="button" onClick={() => { setRegistering(!registering); setForgotPassword(false); setNotice(""); }}>
+                {forgotPassword ? "Back to Sign in" : registering ? "Already have an account? Sign in" : "New to TradeGuru AI? Create free account"}
               </button>
             </p>
           </section>

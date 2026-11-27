@@ -598,3 +598,78 @@ export function stepMarketQuotes(
 export function getInstrumentById(id: string): PaperInstrument {
   return PAPER_INSTRUMENTS.find((item) => item.id === id) ?? PAPER_INSTRUMENTS[0];
 }
+
+const QUOTES_SESSION_KEY = "tradeguru_quotes_snapshot_v1";
+const QUOTES_TTL_MS = 5 * 60 * 1000;
+
+export function getCanonicalAtmStrike(
+  underlying: "NIFTY" | "BANKNIFTY",
+  quotes: Record<string, LiveQuote>
+): number {
+  const futId = underlying === "NIFTY" ? "NFO:NIFTY-FUT" : "NFO:BANKNIFTY-FUT";
+  const futQuote = quotes[futId];
+  const baseSpot = underlying === "NIFTY" ? 24500 : 52100;
+  const basis = underlying === "NIFTY" ? 55 : 120;
+  const step = underlying === "NIFTY" ? 50 : 100;
+  const spot = futQuote ? futQuote.last - basis : baseSpot;
+  return Math.round(spot / step) * step;
+}
+
+export function getDynamicInstrumentDisplay(
+  inst: PaperInstrument,
+  quotes: Record<string, LiveQuote>
+): { symbol: string; name: string; strike?: number } {
+  if (inst.id === "NFO:NIFTY-24500-CE" || inst.id === "NFO:NIFTY-24500-PE") {
+    const atm = getCanonicalAtmStrike("NIFTY", quotes);
+    const opt = inst.id.endsWith("-CE") ? "CE" : "PE";
+    return {
+      symbol: `NIFTY ${atm} ${opt}`,
+      name: `Nifty 50 ${atm} ${opt === "CE" ? "Call" : "Put"} Option (ATM)`,
+      strike: atm,
+    };
+  }
+  if (inst.id === "NFO:BANKNIFTY-52000-CE" || inst.id === "NFO:BANKNIFTY-52000-PE") {
+    const atm = getCanonicalAtmStrike("BANKNIFTY", quotes);
+    const opt = inst.id.endsWith("-CE") ? "CE" : "PE";
+    return {
+      symbol: `BANKNIFTY ${atm} ${opt}`,
+      name: `Bank Nifty ${atm} ${opt === "CE" ? "Call" : "Put"} Option (ATM)`,
+      strike: atm,
+    };
+  }
+  return { symbol: inst.symbol, name: inst.name, strike: inst.greeks?.strikePrice };
+}
+
+export function loadSessionQuotes(): Record<string, LiveQuote> {
+  const fresh = createInitialQuotes();
+  if (typeof window === "undefined") return fresh;
+  try {
+    const raw = window.sessionStorage.getItem(QUOTES_SESSION_KEY);
+    if (!raw) return fresh;
+    const parsed = JSON.parse(raw) as { savedAt?: number; quotes?: Record<string, LiveQuote> };
+    if (!parsed?.savedAt || Date.now() - parsed.savedAt > QUOTES_TTL_MS || !parsed.quotes) {
+      return fresh;
+    }
+    const merged: Record<string, LiveQuote> = { ...fresh };
+    for (const [id, q] of Object.entries(parsed.quotes)) {
+      if (merged[id] && Number.isFinite(q.last) && q.last > 0) {
+        merged[id] = { ...merged[id], ...q };
+      }
+    }
+    return merged;
+  } catch {
+    return fresh;
+  }
+}
+
+export function saveSessionQuotes(quotes: Record<string, LiveQuote>): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(
+      QUOTES_SESSION_KEY,
+      JSON.stringify({ savedAt: Date.now(), quotes })
+    );
+  } catch {
+    /* ignore storage quota errors */
+  }
+}

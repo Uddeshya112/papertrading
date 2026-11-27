@@ -136,7 +136,7 @@ export function BacktestLabView({ account, quotes }: Props) {
         <div className="surface-card nt-kpi">
           <span className="card-kicker">WIN RATE / PROFIT FACTOR</span>
           <strong>{currentResult.winRate}% · PF {currentResult.profitFactor}</strong>
-          <small>{currentResult.totalTrades} trades · Avg R:R 1:{currentResult.avgRiskReward}</small>
+          <small>{currentResult.totalTrades} trades · Avg R:R {currentResult.avgRiskReward !== null ? `1:${currentResult.avgRiskReward}` : "N/A"}</small>
         </div>
         <div className="surface-card nt-kpi">
           <span className="card-kicker">EXPECTANCY / SHARPE</span>
@@ -193,8 +193,9 @@ export function BacktestLabView({ account, quotes }: Props) {
           <div className="nt-cost-table">
             <div><span>In-Sample Train Return (70%)</span><strong>{currentResult.walkForwardTrainReturnPct}%</strong></div>
             <div><span>Out-of-Sample Test Return (30%)</span><strong>{currentResult.walkForwardTestReturnPct}%</strong></div>
-            <div><span>Monte Carlo Median Return (200 runs)</span><strong>{currentResult.monteCarloMedianReturnPct}%</strong></div>
-            <div><span>Monte Carlo Best Case Return</span><strong className="nt-pos">{currentResult.monteCarloBestReturnPct}%</strong></div>
+            <div><span>Monte Carlo 5th Percentile (200 runs)</span><strong>{currentResult.monteCarloP5ReturnPct}%</strong></div>
+              <div><span>Monte Carlo Median Return (50th pct)</span><strong>{currentResult.monteCarloMedianReturnPct}%</strong></div>
+            <div><span>Monte Carlo 95th Percentile Return</span><strong className="nt-pos">{currentResult.monteCarloBestReturnPct}%</strong></div>
             <div><span>Monte Carlo Worst Drawdown</span><strong className="nt-neg">{currentResult.monteCarloWorstDdPct}%</strong></div>
           </div>
         </section>

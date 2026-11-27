@@ -63,7 +63,7 @@ export type BacktestResult = {
   avgProfit: number;
   avgLoss: number;
   expectancy: number;
-  avgRiskReward: number;
+  avgRiskReward: number | null;
   maxDrawdownPct: number;
   sharpeRatio: number;
   netPnl: number;
@@ -72,6 +72,7 @@ export type BacktestResult = {
   equityCurve: number[];
   walkForwardTrainReturnPct: number;
   walkForwardTestReturnPct: number;
+  monteCarloP5ReturnPct: number;
   monteCarloMedianReturnPct: number;
   monteCarloWorstDdPct: number;
   monteCarloBestReturnPct: number;
@@ -192,7 +193,7 @@ export function runHistoricalBacktest(
     totalTrades > 0
       ? (wins.length / totalTrades) * avgProfit - (losses.length / totalTrades) * avgLoss
       : 0;
-  const avgRiskReward = avgLoss > 0 ? avgProfit / avgLoss : 0;
+  const avgRiskReward = losses.length > 0 && avgLoss > 0 ? avgProfit / avgLoss : null;
   const netPnl = equity - config.startingCapital;
   const totalCosts = trades.reduce((s, t) => s + t.charges, 0);
   const returnPct = (netPnl / config.startingCapital) * 100;
@@ -233,7 +234,7 @@ export function runHistoricalBacktest(
     avgProfit: round2(avgProfit),
     avgLoss: round2(avgLoss),
     expectancy: round2(expectancy),
-    avgRiskReward: round2(avgRiskReward),
+    avgRiskReward: avgRiskReward !== null ? round2(avgRiskReward) : null,
     maxDrawdownPct: round2(maxDdPct),
     sharpeRatio,
     netPnl: round2(netPnl),
@@ -242,6 +243,7 @@ export function runHistoricalBacktest(
     equityCurve,
     walkForwardTrainReturnPct: round2((trainPnl / config.startingCapital) * 100),
     walkForwardTestReturnPct: round2((testPnl / config.startingCapital) * 100),
+    monteCarloP5ReturnPct: mc.p5ReturnPct,
     monteCarloMedianReturnPct: mc.medianReturnPct,
     monteCarloWorstDdPct: mc.worstDdPct,
     monteCarloBestReturnPct: mc.bestReturnPct,
@@ -308,16 +310,23 @@ function isExitSignal(
 
 function runMonteCarlo(pnls: number[], startCap: number, runs: number) {
   if (pnls.length === 0) {
-    return { medianReturnPct: 0, worstDdPct: 0, bestReturnPct: 0 };
+    return { p5ReturnPct: 0, medianReturnPct: 0, worstDdPct: 0, bestReturnPct: 0 };
   }
   const finalReturns: number[] = [];
   let worstDdPct = 0;
+  // Deterministic LCG PRNG for reproducible bootstrap resampling WITH replacement
+  let seed = (pnls.length * 2654435761 + Math.round(Math.abs(pnls[0] ?? 1) * 100)) >>> 0;
+  const nextRand = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
 
   for (let r = 0; r < runs; r++) {
     let eq = startCap;
     let peak = startCap;
     for (let i = 0; i < pnls.length; i++) {
-      const pick = pnls[(r * 31 + i * 17) % pnls.length];
+      const idx = Math.floor(nextRand() * pnls.length);
+      const pick = pnls[idx];
       eq += pick;
       if (eq > peak) peak = eq;
       const dd = peak > 0 ? ((peak - eq) / peak) * 100 : 0;
@@ -327,10 +336,14 @@ function runMonteCarlo(pnls: number[], startCap: number, runs: number) {
   }
 
   finalReturns.sort((a, b) => a - b);
+  const p5Idx = Math.max(0, Math.floor(finalReturns.length * 0.05));
+  const p50Idx = Math.floor(finalReturns.length * 0.5);
+  const p95Idx = Math.min(finalReturns.length - 1, Math.floor(finalReturns.length * 0.95));
   return {
-    medianReturnPct: round2(finalReturns[Math.floor(finalReturns.length / 2)]),
+    p5ReturnPct: round2(finalReturns[p5Idx]),
+    medianReturnPct: round2(finalReturns[p50Idx]),
     worstDdPct: round2(worstDdPct),
-    bestReturnPct: round2(finalReturns[finalReturns.length - 1]),
+    bestReturnPct: round2(finalReturns[p95Idx]),
   };
 }
 

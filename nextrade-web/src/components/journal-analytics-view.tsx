@@ -307,13 +307,12 @@ export function JournalAnalyticsView({
                       <strong>{formatINR(t.netPnl, { signed: true })}</strong>
                     </td>
                     <td>
-                      <input
-                        className="nt-input-sm"
+                      <textarea rows={2} style={{ width: "100%", minWidth: 200, resize: "vertical", padding: "6px 8px", fontSize: 12, lineHeight: 1.4 }} className="nt-input-sm"
                         style={{ minWidth: 180 }}
                         value={t.reflection}
                         onChange={(e) => onUpdateReflection(t.id, e.target.value)}
                         placeholder="What worked or broke discipline?"
-                      />
+                      / />
                     </td>
                   </tr>
                 ))}

@@ -31,6 +31,7 @@ import {
 import {
   getInstrumentById,
   PAPER_INSTRUMENTS,
+  getDynamicInstrumentDisplay,
   REGIME_META,
   roundToTick,
   SEGMENT_LABELS,
@@ -112,13 +113,15 @@ export function ProTerminalView({
   const [product, setProduct] = useState<ProductType>("INTRADAY");
   const [tif, setTif] = useState<TimeInForce>("DAY");
   const [lots, setLots] = useState(1);
+  const [qtyInput, setQtyInput] = useState("1");
+  const [qtyHint, setQtyHint] = useState("");
   const [limitPrice, setLimitPrice] = useState("");
   const [autoOffsetPct, setAutoOffsetPct] = useState(1);
   const [autoWaitMins, setAutoWaitMins] = useState(10);
   const [triggerPrice, setTriggerPrice] = useState("");
   const [stopLossPrice, setStopLossPrice] = useState("");
   const [targetPrice, setTargetPrice] = useState("");
-  const [strategy, setStrategy] = useState<StrategyTag>("Intraday Breakout");
+  const [strategy, setStrategy] = useState<StrategyTag>("Positional / Delivery");
   const [emotion, setEmotion] = useState<EmotionTag>("Disciplined");
   const [confidenceLevel, setConfidenceLevel] = useState(4);
   const [rationale, setRationale] = useState("");
@@ -162,6 +165,14 @@ export function ProTerminalView({
     instrument.segment === "MCX_COMMODITY" ||
     instrument.segment === "NSE_CURRENCY";
   const effectiveProduct: ProductType = isDerivative ? "NRML" : product;
+  const availableStrategies = effectiveProduct === "DELIVERY"
+    ? STRATEGY_TAGS.filter((s) => s !== "Intraday Breakout")
+    : STRATEGY_TAGS;
+  useEffect(() => {
+    if (effectiveProduct === "DELIVERY" && strategy === "Intraday Breakout") {
+      setStrategy("Positional / Delivery");
+    }
+  }, [effectiveProduct, strategy]);
 
   const baseCandles = useMemo(
     () => generateCandles(instrument, undefined, timeframe, 56),
@@ -584,8 +595,8 @@ export function ProTerminalView({
                 onClick={() => setDepthOpen((v) => !v)}
                 style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 600, color: "#0f172a" }}
               >
-                <span className="card-kicker" style={{ margin: 0 }}>SIMULATED MARKET DEPTH (ORDER BOOK)</span>
-                <span style={{ fontSize: 11, color: "#64748b" }}>{depthOpen ? "Hide ▲" : "Show ▼"}</span>
+                <span className="card-kicker" style={{ margin: 0 }}>Market Depth (Simulated)</span>
+                <span style={{ fontSize: 11, color: "#64748b", whiteSpace: "nowrap", flexShrink: 0 }}>{depthOpen ? "Hide ▲" : "Show ▼"}</span>
               </button>
               {depthOpen && (
                 <div className="nt-inline-actions">
@@ -624,9 +635,9 @@ export function ProTerminalView({
           <div className="card-heading">
             <div>
               <span className="card-kicker">SIMULATED ORDER TICKET</span>
-              <h2>{instrument.symbol}</h2>
+              <h2>{getDynamicInstrumentDisplay(instrument, quotes).symbol}</h2>
             </div>
-            <span className="source-tag">Cash ₹{Math.round(account.availableCash).toLocaleString("en-IN")}</span>
+            <span className="source-tag tabular-nums">Cash {formatINR(account.availableCash)}</span>
           </div>
 
           <div className="nt-side-toggle">
@@ -639,40 +650,67 @@ export function ProTerminalView({
           </div>
 
           <form className="nt-order-form" onSubmit={handleSubmit}>
-            {/* Core Uncluttered Controls: Quantity + Market/Limit Toggle */}
-            <div className="nt-form-row">
-              <label>
-                {instrument.lotSize > 1 ? `Lots (×${instrument.lotSize} = ${quantity})` : "Quantity"}
-                <input type="number" min={1} value={lots} onChange={(e) => setLots(Math.max(1, Number(e.target.value) || 1))} />
-              </label>
-              <label>
-                <span>
-                  Order Mode
-                  <InfoTip
-                    label="Limit Order"
-                    text="A Market order fills immediately at the current price; a Limit order waits to fill only at your chosen price or better."
-                  />
-                </span>
-                <div className="tg-mode-switch" style={{ width: "100%", justifyContent: "space-between", marginTop: 4 }}>
+            {/* Unified Order Type Control (#5) + Validated Quantity Input (#18) */}
+            <label>
+              <span>
+                Order Type
+                <InfoTip
+                  label="Order Type"
+                  text="Market fills immediately; Limit waits for your target price; SL and SL-M activate when price crosses your Trigger Price."
+                />
+              </span>
+              <div className="tg-mode-switch" style={{ width: "100%", justifyContent: "space-between", marginTop: 4 }}>
+                {(["MARKET", "LIMIT", "SL", "SL-M"] as OrderType[]).map((ot) => (
                   <button
+                    key={ot}
                     type="button"
-                    className={`tg-mode-btn${orderType === "MARKET" ? " active" : ""}`}
-                    style={{ flex: 1 }}
-                    onClick={() => setOrderType("MARKET")}
+                    className={`tg-mode-btn${orderType === ot ? " active" : ""}`}
+                    style={{ flex: 1, whiteSpace: "nowrap" }}
+                    onClick={() => setOrderType(ot)}
                   >
-                    Market
+                    {ot === "MARKET" ? "Market" : ot === "LIMIT" ? "Limit" : ot}
                   </button>
-                  <button
-                    type="button"
-                    className={`tg-mode-btn${orderType !== "MARKET" ? " active" : ""}`}
-                    style={{ flex: 1 }}
-                    onClick={() => setOrderType(orderType === "MARKET" ? "LIMIT" : orderType)}
-                  >
-                    Limit
-                  </button>
-                </div>
-              </label>
-            </div>
+                ))}
+              </div>
+            </label>
+
+            <label>
+              {instrument.lotSize > 1 ? `Lots (×${instrument.lotSize} = ${quantity} qty)` : "Quantity (Shares)"}
+              <input
+                type="number"
+                min={1}
+                value={qtyInput}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  setQtyInput(raw);
+                  if (raw === "") {
+                    setQtyHint("");
+                    return;
+                  }
+                  const n = Number(raw);
+                  if (!Number.isFinite(n) || n < 1) {
+                    setQtyHint(`Minimum quantity is 1 ${instrument.lotSize > 1 ? "lot" : "share"}.`);
+                  } else {
+                    setQtyHint("");
+                    setLots(Math.floor(n));
+                  }
+                }}
+                onBlur={() => {
+                  const n = Number(qtyInput);
+                  if (!Number.isFinite(n) || n < 1) {
+                    setLots(1);
+                    setQtyInput("1");
+                    setQtyHint(`Minimum quantity is 1 ${instrument.lotSize > 1 ? "lot" : "share"}.`);
+                  } else {
+                    const clean = Math.floor(n);
+                    setLots(clean);
+                    setQtyInput(String(clean));
+                    setQtyHint("");
+                  }
+                }}
+              />
+              {qtyHint && <small style={{ color: "#b91c1c", fontSize: 11, marginTop: 2, display: "block" }}>{qtyHint}</small>}
+            </label>
 
             {(orderType === "LIMIT" || orderType === "SL") && (
               <label>
@@ -733,27 +771,19 @@ export function ProTerminalView({
               </button>
               {advancedOpen && (
                 <div className="tg-accordion-body">
-                  <div className="nt-form-row">
-                    <label>
-                      Order Type
-                      <select value={orderType} onChange={(e) => setOrderType(e.target.value as OrderType)}>
-                        {ORDER_TYPES.map((ot) => <option key={ot} value={ot}>{ot}</option>)}
-                      </select>
-                    </label>
-                    <label>
-                      Product
-                      <select value={effectiveProduct} disabled={isDerivative} onChange={(e) => setProduct(e.target.value as ProductType)}>
-                        {isDerivative ? (
-                          <option value="NRML">NRML (Margin)</option>
-                        ) : (
-                          <>
-                            <option value="INTRADAY">Intraday (MIS)</option>
-                            <option value="DELIVERY">Delivery (CNC)</option>
-                          </>
-                        )}
-                      </select>
-                    </label>
-                  </div>
+                  <label>
+                    Product Type
+                    <select value={effectiveProduct} disabled={isDerivative} onChange={(e) => setProduct(e.target.value as ProductType)}>
+                      {isDerivative ? (
+                        <option value="NRML">NRML (Derivatives Margin)</option>
+                      ) : (
+                        <>
+                          <option value="DELIVERY">Delivery (CNC)</option>
+                          <option value="INTRADAY">Intraday (MIS · 5× Margin)</option>
+                        </>
+                      )}
+                    </select>
+                  </label>
 
                   {orderType === "AUTO-LIMIT" && (
                     <div className="nt-form-row">
@@ -803,21 +833,19 @@ export function ProTerminalView({
                     <button type="button" className="nt-pill" onClick={applyRiskSizing} disabled={!stopLossPrice}>Calc Qty</button>
                   </div>
 
-                  <div className="nt-form-row">
-                    <label>
-                      Validity (TIF)
-                      <select value={tif} onChange={(e) => setTif(e.target.value as TimeInForce)}>
-                        <option value="DAY">DAY</option>
-                        <option value="GTC">GTC</option>
-                      </select>
-                    </label>
-                    <label>
-                      Strategy
-                      <select value={strategy} onChange={(e) => setStrategy(e.target.value as StrategyTag)}>
-                        {STRATEGY_TAGS.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    </label>
-                  </div>
+                  <label>
+                    Validity (Time in Force)
+                    <select value={tif} onChange={(e) => setTif(e.target.value as TimeInForce)}>
+                      <option value="DAY">DAY (Valid Today)</option>
+                      <option value="GTC">GTC (Good Till Cancelled)</option>
+                    </select>
+                  </label>
+                  <label>
+                    Strategy Tag
+                    <select value={strategy} onChange={(e) => setStrategy(e.target.value as StrategyTag)}>
+                      {availableStrategies.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </label>
 
                   <div className="nt-form-row">
                     <label>
