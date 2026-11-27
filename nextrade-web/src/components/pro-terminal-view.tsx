@@ -115,6 +115,7 @@ export function ProTerminalView({
   const [lots, setLots] = useState(1);
   const [qtyInput, setQtyInput] = useState("1");
   const [qtyHint, setQtyHint] = useState("");
+  const lastSubmitRef = useRef(0);
   const [limitPrice, setLimitPrice] = useState("");
   const [autoOffsetPct, setAutoOffsetPct] = useState(1);
   const [autoWaitMins, setAutoWaitMins] = useState(10);
@@ -213,7 +214,27 @@ export function ProTerminalView({
         ? quote?.ask ?? instrument.basePrice
         : quote?.bid ?? instrument.basePrice;
 
-  const requiredMargin = computeRequiredMargin(instrument, effectiveProduct, side, activePrice, quantity);
+  const ownedOppositePos = useMemo(
+    () =>
+      account.positions.find(
+        (p) => p.instrumentId === instrument.id && p.side === (side === "BUY" ? "SELL" : "BUY") && p.product === effectiveProduct
+      ) ??
+      (side === "SELL" ? account.positions.find((p) => p.instrumentId === instrument.id && p.side === "BUY") : undefined),
+    [account.positions, instrument.id, side, effectiveProduct]
+  );
+  const isClosingOwned = Boolean(ownedOppositePos && quantity <= ownedOppositePos.quantity);
+  const requiredMargin = isClosingOwned
+    ? 0
+    : computeRequiredMargin(instrument, effectiveProduct, side, activePrice, quantity);
+
+  // Clear stale Limit/SL/Target prices when switching instruments
+  useEffect(() => {
+    setLimitPrice("");
+    setTriggerPrice("");
+    setStopLossPrice("");
+    setTargetPrice("");
+    setQtyHint("");
+  }, [instrument.id]);
   const estCharges = calculateIndianCharges({
     segment: instrument.segment,
     product: effectiveProduct,
@@ -257,7 +278,7 @@ export function ProTerminalView({
       product: effectiveProduct,
       brokeragePlan: account.brokeragePlan,
     });
-    if (sized.recommendedLots >= 1) setLots(sized.recommendedLots);
+    if (sized.recommendedLots >= 1) { setLots(sized.recommendedLots); setQtyInput(String(sized.recommendedLots)); setQtyHint(""); }
   }
 
   function applyTeacherAutoFix() {
@@ -277,13 +298,16 @@ export function ProTerminalView({
       product: effectiveProduct,
       brokeragePlan: account.brokeragePlan,
     });
-    if (sized.recommendedLots >= 1) setLots(sized.recommendedLots);
+    if (sized.recommendedLots >= 1) { setLots(sized.recommendedLots); setQtyInput(String(sized.recommendedLots)); setQtyHint(""); }
     if (!rationale.trim()) setRationale(`Rule-based ${strategy}: 1% risk sizing, 1:2 R:R`);
     if (["FOMO", "Revenge", "Greedy", "Fearful"].includes(emotion)) setEmotion("Disciplined");
   }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const nowMs = Date.now();
+    if (nowMs - lastSubmitRef.current < 350) return;
+    lastSubmitRef.current = nowMs;
     const payload: PlaceOrderInput = {
       instrumentId: instrument.id,
       side,
@@ -675,7 +699,24 @@ export function ProTerminalView({
             </label>
 
             <label>
-              {instrument.lotSize > 1 ? `Lots (×${instrument.lotSize} = ${quantity} qty)` : "Quantity (Shares)"}
+              <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
+                <span>{instrument.lotSize > 1 ? `Lots (×${instrument.lotSize} = ${quantity} qty)` : "Quantity (Shares)"}</span>
+                {ownedOppositePos && side === "SELL" && (
+                  <button
+                    type="button"
+                    className="nt-pill"
+                    style={{ padding: "2px 8px", fontSize: 10 }}
+                    onClick={() => {
+                      const sellLots = Math.max(1, Math.floor(ownedOppositePos.quantity / instrument.lotSize));
+                      setLots(sellLots);
+                      setQtyInput(String(sellLots));
+                      setQtyHint("");
+                    }}
+                  >
+                    Sell All ({ownedOppositePos.quantity})
+                  </button>
+                )}
+              </span>
               <input
                 type="number"
                 min={1}
@@ -754,7 +795,7 @@ export function ProTerminalView({
                     text="The virtual cash temporarily reserved to open this trade (intraday requires less margin than full delivery)."
                   />
                 </span>
-                <strong>{formatINR(requiredMargin)}</strong>
+                <strong className="tabular-nums">{isClosingOwned ? "₹0.00 (Exit)" : formatINR(requiredMargin)}</strong>
               </div>
             </div>
 
