@@ -197,6 +197,7 @@ export default function Home() {
   const [authUserId, setAuthUserId] = useState("");
   const [cloudStatus, setCloudStatus] = useState<CloudSyncStatus>("LOCAL_ONLY");
   const [liveFeedSource, setLiveFeedSource] = useState("Simulated Ticks");
+  const [quotesHydrated, setQuotesHydrated] = useState(false);
   const [supaUrlInput, setSupaUrlInput] = useState("");
   const [supaKeyInput, setSupaKeyInput] = useState("");
   const [supaConnected, setSupaConnected] = useState(false);
