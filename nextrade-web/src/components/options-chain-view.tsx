@@ -1,5 +1,5 @@
-import { formatINR } from "@/lib/format";
 "use client";
+import { formatINR } from "@/lib/format";
 
 import { useMemo, useState } from "react";
 import {
