@@ -400,8 +400,10 @@ export default function Home() {
           return merged;
         });
         setLiveFeedSource("Real Delayed Feed (NSE/BSE)");
+        setQuotesHydrated(true);
       } catch {
         /* Stay gracefully on simulated feed when offline */
+        if (active) setQuotesHydrated(true);
       }
     }
     void syncPublicQuotes();
@@ -878,7 +880,7 @@ export default function Home() {
             <span>Settings</span>
           </button>
           <div className="sidebar-bottom">
-            <span className="service-dot" /> Equity: <strong>{formatINR(netEquity, { decimals: 0 })}</strong>
+            <span className="service-dot" /> Equity: <strong>{formatINR(netEquity)}</strong>
             <small>{cloudStatus === "SYNCED" ? "Cloud Synced ✓" : "Local Paper Mode"} · Sim {simRunning ? "ON" : "Paused"}</small>
           </div>
         </div>
@@ -1046,12 +1048,12 @@ export default function Home() {
               <div className="nt-kpi-grid">
                 <div className="surface-card nt-kpi">
                   <span className="card-kicker">VIRTUAL CASH</span>
-                  <strong>{formatINR(account.availableCash, { decimals: 0 })}</strong>
+                  <strong>{formatINR(account.availableCash)}</strong>
                   <small>Default ₹10,00,000 · {plural(account.resetCount, "refill")}</small>
                 </div>
                 <div className="surface-card nt-kpi">
                   <span className="card-kicker">PORTFOLIO VALUE</span>
-                  <strong>{formatINR(usedMargin + unrealizedPnl, { decimals: 0 })}</strong>
+                  <strong>{formatINR(usedMargin + unrealizedPnl)}</strong>
                   <small>Current value of open holdings &amp; positions</small>
                 </div>
                 <div className="surface-card nt-kpi">
@@ -1138,7 +1140,7 @@ export default function Home() {
                             {up ? "+" : ""}{pct.toFixed(2)}%
                           </span>
                         </div>
-                        <div className="tg-bluechip-price">{formatINR(ltp)}</div>
+                        <div className="tg-bluechip-price tabular-nums">{quotesHydrated ? formatINR(ltp) : "Loading…"}</div>
                         <button
                           type="button"
                           className="nt-pill"

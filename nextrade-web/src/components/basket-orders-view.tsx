@@ -281,7 +281,7 @@ export function BasketOrdersView({
                     <th>Instrument / Contract</th>
                     <th>Side</th>
                     <th>Order</th>
-                    <th>Lots (Qty)</th>
+                    <th>Qty / Lots</th>
                     <th>Ref Price</th>
                     <th>Remove</th>
                   </tr>
@@ -293,14 +293,14 @@ export function BasketOrdersView({
                       <tr key={`${leg.instrumentId}-${idx}`}>
                         <th scope="row">
                           <strong>{leg.customLabel ?? inst.symbol}</strong>
-                          <small>{inst.exchange} · Lot {leg.lotSize}</small>
+                          <small>{leg.lotSize === 1 ? `${inst.exchange} · Equity (Shares)` : `${inst.exchange} · Lot ${leg.lotSize}`}</small>
                         </th>
                         <td>
                           <span className={`nt-badge ${leg.side === "BUY" ? "buy" : "sell"}`}>{leg.side}</span>
                         </td>
                         <td>{leg.orderType}</td>
                         <td>
-                          {leg.lots} ({leg.lots * leg.lotSize})
+                          {leg.lotSize === 1 ? `${leg.lots} ${leg.lots === 1 ? "share" : "shares"}` : `${leg.lots} (${leg.lots * leg.lotSize})`}
                         </td>
                         <td>₹{leg.price.toLocaleString("en-IN")}</td>
                         <td>

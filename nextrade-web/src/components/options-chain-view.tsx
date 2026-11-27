@@ -1,3 +1,4 @@
+import { formatINR } from "@/lib/format";
 "use client";
 
 import { useMemo, useState } from "react";
@@ -58,7 +59,7 @@ export function OptionsChainView({ quotes, onAddLegToBasket, onQuickTradeOption 
               {underlying === "NIFTY" ? "NIFTY 50" : "BANK NIFTY"} Options Chain
             </h2>
             <p>
-              Spot ₹{chain.spotPrice.toLocaleString("en-IN")} (
+              Spot {formatINR(chain.spotPrice)} (
               <span className={chain.spotChangePct >= 0 ? "nt-pos" : "nt-neg"}>
                 {chain.spotChangePct >= 0 ? "+" : ""}
                 {chain.spotChangePct.toFixed(2)}%
@@ -229,7 +230,7 @@ export function OptionsChainView({ quotes, onAddLegToBasket, onQuickTradeOption 
                     {row.call.bid} / {row.call.ask}
                   </td>
                   <td className={row.call.itm ? "nt-itm-cell" : ""}>
-                    <strong>₹{row.call.ltp}</strong>
+                    <strong className="tabular-nums">{formatINR(row.call.ltp)}</strong>
                     <small className={row.call.changePct >= 0 ? "nt-pos" : "nt-neg"}>
                       {row.call.changePct >= 0 ? "+" : ""}
                       {row.call.changePct}% {row.call.movingWithUnderlying ? "●" : ""}
@@ -244,7 +245,7 @@ export function OptionsChainView({ quotes, onAddLegToBasket, onQuickTradeOption 
 
                   {/* PUT SIDE */}
                   <td className={row.put.itm ? "nt-itm-cell" : ""}>
-                    <strong>₹{row.put.ltp}</strong>
+                    <strong className="tabular-nums">{formatINR(row.put.ltp)}</strong>
                     <small className={row.put.changePct >= 0 ? "nt-pos" : "nt-neg"}>
                       {row.put.changePct >= 0 ? "+" : ""}
                       {row.put.changePct}% {row.put.movingWithUnderlying ? "●" : ""}

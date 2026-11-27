@@ -803,15 +803,15 @@ function executeFill(
     category: "ORDER",
     title: isPartial ? "Partial Order Execution" : "Simulated Order Executed",
     message: isPartial
-      ? `Partially filled ${fillQuantity}/${totalQuantity} ${instrument.symbol} @ ₹${fillPrice}. Remaining ${totalQuantity - fillQuantity} working in book.`
-      : `Filled ${input.side} ${fillQuantity} ${instrument.symbol} @ ₹${fillPrice} (Est. charges ₹${charges}).`,
+      ? `Partially filled ${fillQuantity}/${totalQuantity} ${instrument.symbol} @ ₹${fillPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Remaining ${totalQuantity - fillQuantity} working in book.`
+      : `Filled ${input.side} ${fillQuantity} ${instrument.symbol} @ ₹${fillPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Est. charges ₹${charges}).`,
   });
 
   return {
     state: next,
     ok: true,
     message: isPartial
-      ? `Partial fill: ${fillQuantity}/${totalQuantity} ${instrument.symbol} @ ₹${fillPrice}. Remainder queued.`
+      ? `Partial fill: ${fillQuantity}/${totalQuantity} ${instrument.symbol} @ ₹${fillPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Remainder queued.`
       : `Filled ${input.side} ${fillQuantity} ${instrument.symbol} @ ₹${fillPrice.toLocaleString("en-IN")} (Charges ₹${charges}).`,
   };
 }
@@ -916,7 +916,7 @@ export function closePaperPosition(
     next = pushNotification(next, {
       category: "ORDER",
       title: exitReason === "TARGET_HIT" ? "Target Reached" : "Stop-Loss Triggered",
-      message: `${pos.symbol} closed @ ₹${exitPrice} · Net P&L: ${netPnl >= 0 ? "+" : ""}₹${netPnl.toFixed(2)}`,
+      message: `${pos.symbol} closed @ ₹${exitPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · Net P&L: ${netPnl >= 0 ? "+" : ""}₹${netPnl.toFixed(2)}`,
     });
   }
 
@@ -938,21 +938,21 @@ export function processMarketTickOnAccount(
       if (pos.targetPrice !== undefined && q.bid >= pos.targetPrice) {
         const res = closePaperPosition(next, pos.id, pos.targetPrice, "TARGET_HIT");
         next = res.state;
-        notifications.push(`Target hit: Closed ${pos.symbol} @ ₹${pos.targetPrice} (Net ₹${res.trade?.netPnl})`);
+        notifications.push(`Target hit: Closed ${pos.symbol} @ ₹${pos.targetPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Net ₹${res.trade?.netPnl})`);
       } else if (pos.stopLossPrice !== undefined && q.bid <= pos.stopLossPrice) {
         const res = closePaperPosition(next, pos.id, pos.stopLossPrice, "STOP_LOSS_HIT");
         next = res.state;
-        notifications.push(`Stop-loss triggered: Closed ${pos.symbol} @ ₹${pos.stopLossPrice} (Net ₹${res.trade?.netPnl})`);
+        notifications.push(`Stop-loss triggered: Closed ${pos.symbol} @ ₹${pos.stopLossPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Net ₹${res.trade?.netPnl})`);
       }
     } else {
       if (pos.targetPrice !== undefined && q.ask <= pos.targetPrice) {
         const res = closePaperPosition(next, pos.id, pos.targetPrice, "TARGET_HIT");
         next = res.state;
-        notifications.push(`Target hit: Covered ${pos.symbol} @ ₹${pos.targetPrice} (Net ₹${res.trade?.netPnl})`);
+        notifications.push(`Target hit: Covered ${pos.symbol} @ ₹${pos.targetPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Net ₹${res.trade?.netPnl})`);
       } else if (pos.stopLossPrice !== undefined && q.ask >= pos.stopLossPrice) {
         const res = closePaperPosition(next, pos.id, pos.stopLossPrice, "STOP_LOSS_HIT");
         next = res.state;
-        notifications.push(`Stop-loss triggered: Covered ${pos.symbol} @ ₹${pos.stopLossPrice} (Net ₹${res.trade?.netPnl})`);
+        notifications.push(`Stop-loss triggered: Covered ${pos.symbol} @ ₹${pos.stopLossPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Net ₹${res.trade?.netPnl})`);
       }
     }
   }
@@ -1011,7 +1011,7 @@ export function processMarketTickOnAccount(
             ...next.positions,
           ],
         };
-        notifications.push(`Remainder filled: +${remQty} ${ord.symbol} @ ₹${execPrice}`);
+        notifications.push(`Remainder filled: +${remQty} ${ord.symbol} @ ₹${execPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
       }
       continue;
     }
@@ -1096,7 +1096,7 @@ export function processMarketTickOnAccount(
             ...next.positions,
           ],
         };
-        notifications.push(`Pending ${ord.orderType} filled: ${ord.side} ${ord.quantity} ${ord.symbol} @ ₹${execPrice}`);
+        notifications.push(`Pending ${ord.orderType} filled: ${ord.side} ${ord.quantity} ${ord.symbol} @ ₹${execPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
       }
     }
   }

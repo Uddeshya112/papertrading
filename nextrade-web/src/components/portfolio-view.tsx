@@ -61,18 +61,18 @@ export function PortfolioView({
       <div className="nt-kpi-grid">
         <div className="surface-card nt-kpi">
           <span className="card-kicker">TOTAL ACCOUNT EQUITY</span>
-          <strong>₹{Math.round(netEquity).toLocaleString("en-IN")}</strong>
+          <strong className="tabular-nums">{formatINR(netEquity)}</strong>
           <small>Default {formatINR(DEFAULT_VIRTUAL_CAPITAL)} · Refills: {account.resetCount}</small>
         </div>
         <div className="surface-card nt-kpi">
           <span className="card-kicker">AVAILABLE CASH / BUYING POWER</span>
-          <strong>₹{Math.round(account.availableCash).toLocaleString("en-IN")}</strong>
-          <small>Intraday Buying Power: ₹{Math.round(buyingPower).toLocaleString("en-IN")}</small>
+          <strong className="tabular-nums">{formatINR(account.availableCash)}</strong>
+          <small className="tabular-nums">Intraday Buying Power: {formatINR(buyingPower)}</small>
         </div>
         <div className="surface-card nt-kpi">
           <span className="card-kicker">USED MARGIN / INVESTED</span>
-          <strong>₹{Math.round(usedMargin).toLocaleString("en-IN")}</strong>
-          <small>Delivery Holdings Invested: ₹{Math.round(investedCapital).toLocaleString("en-IN")}</small>
+          <strong className="tabular-nums">{formatINR(usedMargin)}</strong>
+          <small className="tabular-nums">Delivery Holdings Invested: {formatINR(investedCapital)}</small>
         </div>
         <div className="surface-card nt-kpi">
           <span className="card-kicker">DAILY / LIFETIME P&amp;L</span>
@@ -233,7 +233,7 @@ export function PortfolioView({
                     <td>{ord.product}</td>
                     <td className="tabular-nums">{ord.filledQuantity || ord.quantity}</td>
                     <td className="tabular-nums">{formatINR(ord.filledPrice ?? ord.limitPrice ?? ord.triggerPrice ?? 0)}</td>
-                    <td className="tabular-nums">{formatINR(ord.charges ?? 0)}</td>
+                    <td className="tabular-nums" title={`Total statutory charges (${formatINR(ord.charges ?? 0)}): includes Brokerage, STT/CTT, Exchange Txn, SEBI Fee, Stamp Duty & 18% GST`} style={{ textDecoration: "underline dotted", cursor: "help" }}>{formatINR(ord.charges ?? 0)}</td>
                     <td><span className="quote-mode simulated">{ord.status}</span></td>
                   </tr>
                 ))}

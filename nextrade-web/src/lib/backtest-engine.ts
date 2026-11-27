@@ -193,7 +193,7 @@ export function runHistoricalBacktest(
     totalTrades > 0
       ? (wins.length / totalTrades) * avgProfit - (losses.length / totalTrades) * avgLoss
       : 0;
-  const avgRiskReward = losses.length > 0 && avgLoss > 0 ? avgProfit / avgLoss : null;
+  const avgRiskReward = wins.length > 0 && losses.length > 0 && avgLoss > 0 ? avgProfit / avgLoss : null;
   const netPnl = equity - config.startingCapital;
   const totalCosts = trades.reduce((s, t) => s + t.charges, 0);
   const returnPct = (netPnl / config.startingCapital) * 100;

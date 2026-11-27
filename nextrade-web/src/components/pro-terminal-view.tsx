@@ -416,7 +416,7 @@ export function ProTerminalView({
                     }}
                   >
                     <div className="nt-watch-sym">
-                      <strong>{item.symbol}</strong>
+                      <strong>{getDynamicInstrumentDisplay(item, quotes).symbol}</strong>
                       <small>{item.exchange} · Lot {item.lotSize}</small>
                     </div>
                     <div className="nt-watch-price">
@@ -437,7 +437,7 @@ export function ProTerminalView({
           <div className="card-heading">
             <div>
               <span className="card-kicker">{instrument.exchange} · {SEGMENT_LABELS[instrument.segment]} · {instrument.sector}</span>
-              <h2>{instrument.symbol} — {instrument.name}</h2>
+              <h2>{getDynamicInstrumentDisplay(instrument, quotes).symbol} — {getDynamicInstrumentDisplay(instrument, quotes).name}</h2>
             </div>
             <div className="nt-inline-actions">
               <button type="button" className="nt-pill" onClick={() => onToggleWatchlist(instrument.id)}>
@@ -901,7 +901,7 @@ export function ProTerminalView({
             )}
 
             <button type="submit" className={`nt-submit-order ${side === "BUY" ? "buy" : "sell"}`}>
-              {side} {quantity} {instrument.symbol} ({orderType})
+              {side} {quantity} {getDynamicInstrumentDisplay(instrument, quotes).symbol} ({orderType})
             </button>
           </form>
         </aside>
@@ -912,7 +912,7 @@ export function ProTerminalView({
         <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setConfirmPending(null); }}>
           <section className="auth-modal" role="dialog" aria-modal="true">
             <span className="card-kicker">ORDER CONFIRMATION (SIMULATED)</span>
-            <h2 style={{ margin: "6px 0 10px" }}>{confirmPending.side} {quantity} {instrument.symbol}</h2>
+            <h2 style={{ margin: "6px 0 10px" }}>{confirmPending.side} {quantity} {getDynamicInstrumentDisplay(instrument, quotes).symbol}</h2>
             <p className="nt-prose">
               Type: <strong>{confirmPending.orderType}</strong> · Product: <strong>{confirmPending.product}</strong> · Est. Margin: <strong>{formatINR(requiredMargin)}</strong> · Est. Charges: <strong>{formatINR(estCharges.totalCharges)}</strong>.
             </p>
