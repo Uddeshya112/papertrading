@@ -312,7 +312,7 @@ export function JournalAnalyticsView({
                         value={t.reflection}
                         onChange={(e) => onUpdateReflection(t.id, e.target.value)}
                         placeholder="What worked or broke discipline?"
-                      / />
+                      />
                     </td>
                   </tr>
                 ))}

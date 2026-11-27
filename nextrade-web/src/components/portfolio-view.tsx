@@ -185,7 +185,7 @@ export function PortfolioView({
                       {editingOrderId === ord.id ? (
                         <input type="number" className="nt-input-sm" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} />
                       ) : (
-                        {formatINR(ord.limitPrice ?? ord.triggerPrice ?? ord.filledPrice ?? 0)}
+                        formatINR(ord.limitPrice ?? ord.triggerPrice ?? ord.filledPrice ?? 0)
                       )}
                     </td>
                     <td><span className="quote-mode simulated">{ord.status}</span></td>
