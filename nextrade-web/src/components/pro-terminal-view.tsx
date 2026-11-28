@@ -750,7 +750,7 @@ export function ProTerminalView({
                   }
                 }}
               />
-              {qtyHint && <small style={{ color: "#b91c1c", fontSize: 11, marginTop: 2, display: "block" }}>{qtyHint}</small>}
+              {qtyHint && <small className="tg-error-hint" role="alert" style={{ color: "#b91c1c", fontSize: 11, marginTop: 2, display: "block" }}>{qtyHint}</small>}
             </label>
 
             {(orderType === "LIMIT" || orderType === "SL") && (

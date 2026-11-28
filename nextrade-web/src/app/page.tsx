@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { WorkspaceErrorBoundary } from "@/components/workspace-error-boundary";
+import { ScrollReveal, TiltCard, ViewTransition } from "@/components/motion-primitives";
 import type { User } from "@supabase/supabase-js";
 import { authRedirect, clearSupabaseConfig, getSavedSupabaseConfig, getSupabase, isSupabaseConfigured, saveSupabaseConfig } from "@/lib/supabase";
 import { flushPendingSyncIfDue, pullAccountFromCloud, pushAccountToCloud, type CloudSyncStatus } from "@/lib/cloud-sync";
@@ -297,6 +298,18 @@ export default function Home() {
       });
     return () => { cancelled = true; };
   }, [signedIn, authUserId]);
+
+  // Escape key closes open modals and drawers cleanly (Jakob's Law + Keyboard A11y)
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setAuthOpen(false);
+        setNotifOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   // Auto-dismiss status toasts after 4 seconds
   useEffect(() => {
@@ -1023,10 +1036,11 @@ export default function Home() {
           )}
 
           <WorkspaceErrorBoundary viewName={activeView}>
+          <ViewTransition viewKey={activeView}>
           {activeView === "Overview" && (
             <div className="nt-stack">
               {/* Clean Top Hero Row with ONE solid primary emerald CTA */}
-              <div className="tg-home-hero">
+              <div className="tg-home-hero tg-stage-1">
                 <div>
                   <h1>Welcome back, {studentName}</h1>
                   <p>Practice NSE/BSE trading with ₹10,00,000 virtual capital and real Indian fee formulas.</p>
@@ -1046,7 +1060,7 @@ export default function Home() {
               </div>
 
               {/* 4 Clean KPI Cards */}
-              <div className="nt-kpi-grid">
+              <div className="nt-kpi-grid tg-stage-2">
                 <div className="surface-card nt-kpi">
                   <span className="card-kicker">VIRTUAL CASH</span>
                   <strong>{formatINR(account.availableCash)}</strong>
@@ -1131,8 +1145,15 @@ export default function Home() {
                     const pct = q?.changePercent ?? 0;
                     const up = pct >= 0;
                     return (
-                      <div key={inst.id} className="tg-bluechip-card">
-                        <div className="tg-bluechip-head">
+                      <TiltCard
+                        key={inst.id}
+                        className="tg-bluechip-card"
+                        onClick={() => {
+                          setSelectedInstrumentId(inst.id);
+                          navigateView("Trade Terminal");
+                        }}
+                      >
+                        <div className="tg-bluechip-head" style={{ cursor: "pointer" }}>
                           <div>
                             <strong>{inst.symbol}</strong>
                             <small>{inst.name}</small>
@@ -1141,18 +1162,19 @@ export default function Home() {
                             {up ? "+" : ""}{pct.toFixed(2)}%
                           </span>
                         </div>
-                        <div className="tg-bluechip-price tabular-nums">{quotesHydrated ? formatINR(ltp) : "Loading…"}</div>
+                        <div className="tg-bluechip-price tabular-nums">{quotesHydrated ? formatINR(ltp) : <span className="tg-skeleton" aria-label="Loading live price" />}</div>
                         <button
                           type="button"
                           className="nt-pill"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setSelectedInstrumentId(inst.id);
                             navigateView("Trade Terminal");
                           }}
                         >
-                          Trade {inst.symbol}
+                          Trade {inst.symbol} <span>→</span>
                         </button>
-                      </div>
+                      </TiltCard>
                     );
                   })}
                 </div>
@@ -1160,6 +1182,7 @@ export default function Home() {
 
               <TradingViewWidget kind="ticker-tape" title="Market ticker" />
 
+              <ScrollReveal delayMs={80}>
               <div className="dashboard-grid overview-grid">
                 <article className="surface-card chart-card">
                   <div className="card-heading">
@@ -1175,6 +1198,7 @@ export default function Home() {
                   <TradingViewWidget kind="market-overview" title="Market overview" />
                 </article>
               </div>
+              </ScrollReveal>
             </div>
           )}
 
@@ -1513,6 +1537,7 @@ export default function Home() {
             </div>
           )}
 
+          </ViewTransition>
           </WorkspaceErrorBoundary>
           <footer className="dashboard-footer">
             <span>TradeGuru AI <b>·</b> 100% Free Educational Paper Trading Ecosystem (Simulated Execution — Never Real Exchange Orders)</span>

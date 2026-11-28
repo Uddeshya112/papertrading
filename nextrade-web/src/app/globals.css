@@ -907,3 +907,312 @@ textarea.nt-input-sm {
   gap: 4px;
   white-space: nowrap;
 }
+
+/* ==========================================================================
+   TRADEGURU AI — MOTION DESIGN SYSTEM (10 ANIMATION + 10 UI/UX PRINCIPLES)
+   GPU-accelerated (transform & opacity), snappy timing, prefers-reduced-motion
+   ========================================================================== */
+:root {
+  --dur-micro: 150ms;
+  --dur-comp: 260ms;
+  --dur-reveal: 520ms;
+  --dur-stage: 720ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --elev-1: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
+  --elev-2: 0 8px 20px -4px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  --elev-3: 0 18px 36px -8px rgba(15, 23, 42, 0.14), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
+}
+
+/* Prevent accidental horizontal overflow across viewports */
+html, body {
+  overflow-x: clip;
+}
+
+/* 4. Pose-to-Pose Keyframes & 7. Moving in Arcs */
+@keyframes tg-view-enter {
+  0%   { opacity: 0; transform: translate3d(0, 10px, 0) scale(0.992); }
+  65%  { opacity: 1; transform: translate3d(0, -1px, 0) scale(1.001); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes tg-hero-stage {
+  0%   { opacity: 0; transform: translate3d(0, 14px, 0); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes tg-modal-arc {
+  0%   { opacity: 0; transform: translate3d(0, 18px, 0) scale(0.95) rotate(-0.6deg); }
+  70%  { opacity: 1; transform: translate3d(0, -2px, 0) scale(1.01) rotate(0.15deg); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+}
+
+@keyframes tg-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes tg-toast-arc {
+  0%   { opacity: 0; transform: translate3d(26px, -12px, 0) scale(0.94) rotate(1.2deg); }
+  72%  { opacity: 1; transform: translate3d(-3px, 1px, 0) scale(1.015) rotate(-0.2deg); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+}
+
+@keyframes tg-drawer-drop {
+  0%   { opacity: 0; transform: translate3d(0, -10px, 0) scale(0.97); }
+  75%  { opacity: 1; transform: translate3d(0, 2px, 0) scale(1.005); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes tg-accordion-reveal {
+  0%   { opacity: 0; transform: translate3d(0, -6px, 0); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes tg-pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45); }
+  50%      { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+}
+
+@keyframes tg-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes tg-shake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-4px); }
+  75%      { transform: translateX(4px); }
+}
+
+/* Page / View Transition */
+.tg-view-transition {
+  animation: tg-view-enter var(--dur-comp) var(--ease-out) both;
+}
+
+/* 3. Staging the Focus (Staggered Hero & Card Entrances) */
+.tg-stage-1 { animation: tg-hero-stage var(--dur-reveal) var(--ease-out) 0ms both; }
+.tg-stage-2 { animation: tg-hero-stage var(--dur-reveal) var(--ease-out) 60ms both; }
+.tg-stage-3 { animation: tg-hero-stage var(--dur-reveal) var(--ease-out) 120ms both; }
+.tg-stage-4 { animation: tg-hero-stage var(--dur-reveal) var(--ease-out) 180ms both; }
+
+/* Scroll Reveal Primitive */
+.tg-reveal {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  transition: opacity var(--dur-reveal) var(--ease-out), transform var(--dur-reveal) var(--ease-out);
+}
+.tg-reveal.is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+/* 1. Squash & Stretch + 2. Anticipation + 8. Secondary Action + 9. Snappy Timing */
+.primary-button,
+.nt-submit-order,
+.nt-pill,
+.tg-mode-btn,
+.nt-side-btn,
+.button {
+  transition:
+    transform var(--dur-micro) var(--ease-spring),
+    background-color var(--dur-micro) var(--ease-out),
+    border-color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
+  will-change: transform;
+}
+
+/* Bigger Hit Areas (UI/UX #2) & Fitts's Law (UI/UX #4) */
+.primary-button {
+  min-height: 40px;
+  padding: 10px 18px;
+}
+.nt-submit-order {
+  min-height: 44px;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+}
+.nt-pill {
+  min-height: 34px;
+  padding: 6px 12px;
+}
+.nav-item {
+  min-height: 40px;
+  transition:
+    transform var(--dur-micro) var(--ease-out),
+    background-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
+}
+.modal-close {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--dur-micro) var(--ease-spring), background-color var(--dur-micro) var(--ease-out);
+}
+.modal-close:hover {
+  background: #f1f5f9;
+  transform: rotate(90deg) scale(1.06);
+}
+
+/* Anticipation on hover + Squash & Stretch on active press */
+.primary-button:hover:not(:disabled),
+.nt-submit-order:hover:not(:disabled) {
+  transform: translate3d(0, -1.5px, 0) scale(1.015);
+  box-shadow: var(--elev-2);
+}
+.primary-button:active:not(:disabled),
+.nt-submit-order:active:not(:disabled) {
+  transform: translate3d(0, 1px, 0) scale(0.965, 0.945);
+}
+.nt-pill:hover:not(:disabled),
+.tg-mode-btn:hover:not(:disabled),
+.nt-side-btn:hover:not(:disabled) {
+  transform: translate3d(0, -1px, 0);
+}
+.nt-pill:active:not(:disabled),
+.tg-mode-btn:active:not(:disabled),
+.nt-side-btn:active:not(:disabled) {
+  transform: scale(0.95, 0.93);
+}
+
+/* 8. Secondary Action: Nav icon nudge & arrow shift on hover */
+.nav-item .nav-icon {
+  transition: transform var(--dur-micro) var(--ease-spring);
+}
+.nav-item:hover .nav-icon {
+  transform: translate3d(2px, 0, 0) scale(1.08);
+}
+.nav-item.selected {
+  box-shadow: inset 3px 0 0 #059669;
+}
+.primary-button span,
+.button span {
+  display: inline-block;
+  transition: transform var(--dur-micro) var(--ease-spring);
+}
+.primary-button:hover span,
+.button:hover span {
+  transform: translate3d(3px, 0, 0);
+}
+.service-dot {
+  animation: tg-pulse-dot 2.4s var(--ease-in-out) infinite;
+}
+
+/* 9. Solid Drawing in 3D: Elevated cards & TiltCard spotlight */
+.surface-card,
+.tg-bluechip-card {
+  box-shadow: var(--elev-1);
+  transition:
+    transform var(--dur-comp) var(--ease-out),
+    box-shadow var(--dur-comp) var(--ease-out),
+    border-color var(--dur-micro) var(--ease-out);
+}
+.tg-bluechip-card:hover,
+.nt-kpi:hover {
+  border-color: #cbd5e1;
+  box-shadow: var(--elev-2);
+}
+
+.tg-tilt-card {
+  --tilt-rx: 0deg;
+  --tilt-ry: 0deg;
+  --spot-x: 50%;
+  --spot-y: 50%;
+  position: relative;
+  transform: perspective(900px) rotateX(var(--tilt-rx)) rotateY(var(--tilt-ry)) translateZ(0);
+  transition: transform 220ms var(--ease-out), box-shadow var(--dur-comp) var(--ease-out);
+  transform-style: preserve-3d;
+}
+.tg-tilt-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(240px circle at var(--spot-x) var(--spot-y), rgba(16, 185, 129, 0.08), transparent 70%);
+  transition: opacity var(--dur-comp) var(--ease-out);
+}
+.tg-tilt-card:hover::after {
+  opacity: 1;
+}
+
+/* 5. Follow Through & 7. Moving in Arcs on Modals, Drawers, Toasts & Accordions */
+.modal-backdrop {
+  animation: tg-backdrop-in 180ms var(--ease-out) both;
+}
+.auth-modal {
+  animation: tg-modal-arc 300ms var(--ease-spring) both;
+  box-shadow: var(--elev-3);
+}
+.toast {
+  animation: tg-toast-arc 320ms var(--ease-spring) both;
+}
+.nt-notif-drawer {
+  animation: tg-drawer-drop 240ms var(--ease-spring) both;
+  box-shadow: var(--elev-3);
+}
+.tg-accordion-body {
+  animation: tg-accordion-reveal 220ms var(--ease-out) both;
+}
+
+/* 10. Exaggerated Feedback: Focus rings, Error hints, Skeleton loaders (Doherty Threshold #3) */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+}
+
+.tg-skeleton {
+  display: inline-block;
+  min-width: 96px;
+  height: 1.25em;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: tg-shimmer 1.35s linear infinite;
+  vertical-align: middle;
+}
+
+.tg-error-hint {
+  animation: tg-shake 240ms var(--ease-out);
+}
+
+/* Mobile bottom nav bigger touch targets & active feedback */
+.tg-mobile-nav-btn {
+  min-height: 48px;
+  transition: transform var(--dur-micro) var(--ease-spring), color var(--dur-micro) var(--ease-out);
+}
+.tg-mobile-nav-btn:active {
+  transform: scale(0.92);
+}
+
+/* ==========================================================================
+   PART 5: ACCESSIBILITY — RESPECT prefers-reduced-motion
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .tg-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .tg-tilt-card {
+    transform: none !important;
+  }
+  .tg-tilt-card::after {
+    display: none !important;
+  }
+}
