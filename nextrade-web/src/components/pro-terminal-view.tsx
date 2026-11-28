@@ -524,8 +524,8 @@ export function ProTerminalView({
                 </span>
               </div>
               <div className="nt-quote-meta">
-                <span>Bid: <b>₹{quote.bid}</b></span>
-                <span>Ask: <b>₹{quote.ask}</b></span>
+                <span className="tabular-nums">Bid: <b>{formatINR(quote.bid)}</b></span>
+                <span className="tabular-nums">Ask: <b>{formatINR(quote.ask)}</b></span>
                 <span>RSI(14): <b>{latestRsi ?? "—"}</b></span>
                 <span>Vol: <b>{(quote.volume / 1000).toFixed(1)}k</b></span>
               </div>

@@ -1224,7 +1224,8 @@ textarea:focus-visible {
   gap: 3px;
   min-width: 0;
 }
-.nt-order-ticket .tg-tip-pop {
+.nt-order-ticket .tg-tip-bubble, .nt-order-ticket .tg-tip-pop {
+  white-space: normal !important;
   left: auto !important;
   right: 0 !important;
   transform: none !important;

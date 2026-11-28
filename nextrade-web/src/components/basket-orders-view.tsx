@@ -140,8 +140,8 @@ export function BasketOrdersView({
     }
 
     const hedgeBenefitApplied = hasOptionBuy && hasOptionSell;
-    const netMargin = hedgeBenefitApplied ? Math.round(rawMargin * 0.42) : Math.round(rawMargin);
-    return { rawMargin: Math.round(rawMargin), netMargin, hedgeBenefitApplied };
+    const netMargin = Number((hedgeBenefitApplied ? rawMargin * 0.42 : rawMargin).toFixed(2));
+    return { rawMargin: Number(rawMargin.toFixed(2)), netMargin, hedgeBenefitApplied };
   }, [stagedLegs]);
 
   function addManualLeg() {
@@ -345,11 +345,11 @@ export function BasketOrdersView({
             <div className="nt-cost-preview" style={{ marginTop: 12 }}>
               <div>
                 <span>Unhedged Margin</span>
-                <strong>₹{marginSummary.rawMargin.toLocaleString("en-IN")}</strong>
+                <strong>₹{marginSummary.rawMargin.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
               </div>
               <div>
                 <span>Final Margin {marginSummary.hedgeBenefitApplied ? "(Hedge Benefit Applied)" : ""}</span>
-                <strong className="nt-pos">₹{marginSummary.netMargin.toLocaleString("en-IN")}</strong>
+                <strong className="nt-pos">₹{marginSummary.netMargin.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
               </div>
               <div>
                 <span>Available Cash</span>
