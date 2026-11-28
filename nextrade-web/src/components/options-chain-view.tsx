@@ -227,7 +227,7 @@ export function OptionsChainView({ quotes, onAddLegToBasket, onQuickTradeOption 
                   <td className={row.call.itm ? "nt-itm-cell" : ""}>{(row.call.volume / 1000).toFixed(1)}k</td>
                   <td className={row.call.itm ? "nt-itm-cell" : ""}>{row.call.iv}%</td>
                   <td className={row.call.itm ? "nt-itm-cell" : ""}>
-                    {row.call.bid} / {row.call.ask}
+                    {row.call.bid.toFixed(2)} / {row.call.ask.toFixed(2)}
                   </td>
                   <td className={row.call.itm ? "nt-itm-cell" : ""}>
                     <strong className="tabular-nums">{formatINR(row.call.ltp)}</strong>
@@ -252,7 +252,7 @@ export function OptionsChainView({ quotes, onAddLegToBasket, onQuickTradeOption 
                     </small>
                   </td>
                   <td className={row.put.itm ? "nt-itm-cell" : ""}>
-                    {row.put.bid} / {row.put.ask}
+                    {row.put.bid.toFixed(2)} / {row.put.ask.toFixed(2)}
                   </td>
                   <td className={row.put.itm ? "nt-itm-cell" : ""}>{row.put.iv}%</td>
                   <td className={row.put.itm ? "nt-itm-cell" : ""}>{(row.put.volume / 1000).toFixed(1)}k</td>

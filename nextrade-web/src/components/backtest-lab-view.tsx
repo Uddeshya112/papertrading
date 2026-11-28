@@ -146,7 +146,7 @@ export function BacktestLabView({ account, quotes }: Props) {
         <div className="surface-card nt-kpi">
           <span className="card-kicker">WALK-FORWARD &amp; MONTE CARLO</span>
           <strong>OOS {currentResult.walkForwardTestReturnPct}%</strong>
-          <small>MC Median {currentResult.monteCarloMedianReturnPct}% · Worst DD {currentResult.monteCarloWorstDdPct}%</small>
+          <small>MC Median {currentResult.monteCarloMedianReturnPct.toFixed(2)}% · Worst DD {currentResult.monteCarloWorstDdPct.toFixed(2)}%</small>
         </div>
       </div>
 
@@ -193,10 +193,10 @@ export function BacktestLabView({ account, quotes }: Props) {
           <div className="nt-cost-table">
             <div><span>In-Sample Train Return (70%)</span><strong>{currentResult.walkForwardTrainReturnPct}%</strong></div>
             <div><span>Out-of-Sample Test Return (30%)</span><strong>{currentResult.walkForwardTestReturnPct}%</strong></div>
-            <div><span>Monte Carlo 5th Percentile (200 runs)</span><strong>{currentResult.monteCarloP5ReturnPct}%</strong></div>
-              <div><span>Monte Carlo Median Return (50th pct)</span><strong>{currentResult.monteCarloMedianReturnPct}%</strong></div>
-            <div><span>Monte Carlo 95th Percentile Return</span><strong className="nt-pos">{currentResult.monteCarloBestReturnPct}%</strong></div>
-            <div><span>Monte Carlo Worst Drawdown</span><strong className="nt-neg">{currentResult.monteCarloWorstDdPct}%</strong></div>
+            <div><span>Monte Carlo 5th Percentile (200 runs)</span><strong>{currentResult.monteCarloP5ReturnPct.toFixed(2)}%</strong></div>
+              <div><span>Monte Carlo Median Return (50th pct)</span><strong>{currentResult.monteCarloMedianReturnPct.toFixed(2)}%</strong></div>
+            <div><span>Monte Carlo 95th Percentile Return</span><strong className="nt-pos">{currentResult.monteCarloBestReturnPct.toFixed(2)}%</strong></div>
+            <div><span>Monte Carlo Worst Drawdown</span><strong className="nt-neg">{currentResult.monteCarloWorstDdPct.toFixed(2)}%</strong></div>
           </div>
         </section>
       </div>

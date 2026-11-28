@@ -172,6 +172,8 @@ export function ProTerminalView({
   useEffect(() => {
     if (effectiveProduct === "DELIVERY" && strategy === "Intraday Breakout") {
       setStrategy("Positional / Delivery");
+    } else if (effectiveProduct === "INTRADAY" && strategy === "Positional / Delivery") {
+      setStrategy("Intraday Breakout");
     }
   }, [effectiveProduct, strategy]);
 
@@ -741,7 +743,7 @@ export function ProTerminalView({
                   if (!Number.isFinite(n) || n < 1) {
                     setLots(1);
                     setQtyInput("1");
-                    setQtyHint(`Minimum quantity is 1 ${instrument.lotSize > 1 ? "lot" : "share"}.`);
+                    setQtyHint("");
                   } else {
                     const clean = Math.floor(n);
                     setLots(clean);

@@ -302,7 +302,7 @@ export function BasketOrdersView({
                         <td>
                           {leg.lotSize === 1 ? `${leg.lots} ${leg.lots === 1 ? "share" : "shares"}` : `${leg.lots} (${leg.lots * leg.lotSize})`}
                         </td>
-                        <td>₹{leg.price.toLocaleString("en-IN")}</td>
+                        <td>₹{leg.price.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td>
                           <button
                             type="button"

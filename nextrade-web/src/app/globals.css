@@ -1216,3 +1216,17 @@ textarea:focus-visible {
     display: none !important;
   }
 }
+
+/* Live Browser QA Polish: Tooltip inward alignment & Summary Box clean stacking */
+.nt-order-ticket .nt-cost-preview > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.nt-order-ticket .tg-tip-pop {
+  left: auto !important;
+  right: 0 !important;
+  transform: none !important;
+  max-width: 230px;
+}
