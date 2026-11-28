@@ -134,7 +134,7 @@ export function RiskCenterView({ account, quotes, onUpdateRiskLimits }: Props) {
         <div className="surface-card nt-kpi">
           <span className="card-kicker">MARGIN UTILIZATION</span>
           <strong>{marginUtilPct.toFixed(1)}%</strong>
-          <small>₹{Math.round(usedMargin).toLocaleString("en-IN")} used / ₹{Math.round(totalEquity).toLocaleString("en-IN")}</small>
+          <small>₹{usedMargin.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} used / ₹{totalEquity.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</small>
         </div>
         <div className="surface-card nt-kpi">
           <span className="card-kicker">CONSECUTIVE LOSSES</span>
@@ -304,7 +304,7 @@ export function RiskCenterView({ account, quotes, onUpdateRiskLimits }: Props) {
                 <div key={s.sector} className="nt-sector-card" style={{ borderColor: breached ? "#b84739" : "#d8e7dc" }}>
                   <span>{s.sector}</span>
                   <strong className={breached ? "nt-neg" : "nt-pos"}>{s.pct.toFixed(1)}%</strong>
-                  <small>₹{Math.round(s.notional).toLocaleString("en-IN")}{breached ? " · Limit Exceeded!" : ""}</small>
+                  <small>₹{s.notional.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{breached ? " · Limit Exceeded!" : ""}</small>
                 </div>
               );
             })}

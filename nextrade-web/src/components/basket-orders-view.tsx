@@ -353,7 +353,7 @@ export function BasketOrdersView({
               </div>
               <div>
                 <span>Available Cash</span>
-                <strong>₹{Math.round(account.availableCash).toLocaleString("en-IN")}</strong>
+                <strong className="tabular-nums">₹{account.availableCash.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
               </div>
             </div>
 

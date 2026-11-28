@@ -67,7 +67,7 @@ export function MarketIntelAdminView({
       setServerAuditLogs(json.logs ?? []);
       setServerAuditStatus(`Verified via /api/admin/audit (${json.logs?.length ?? 0} server records).`);
     } catch {
-      setServerAuditStatus("Supabase session unavailable in local guest mode.");
+      setServerAuditStatus("Cloud audit session unavailable in local guest mode.");
     }
   }
 

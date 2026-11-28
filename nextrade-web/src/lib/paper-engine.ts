@@ -636,7 +636,7 @@ export function placePaperOrder(
     const rejectedState = pushNotification(state, {
       category: "ORDER",
       title: "Order Rejected — Insufficient Virtual Margin",
-      message: `Need ₹${Math.round(requiredMargin + estCharges).toLocaleString("en-IN")} for ${quantity} ${instrument.symbol}, available ₹${Math.round(state.availableCash).toLocaleString("en-IN")}.`,
+      message: `Need ₹${(requiredMargin + estCharges).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} for ${quantity} ${instrument.symbol}, available ₹${state.availableCash.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`,
     });
     return {
       state: rejectedState,
@@ -709,7 +709,7 @@ export function placePaperOrder(
   }
 
   // Realistic Partial Fill simulation for large orders (>= 250 shares or >= 5 lots)
-  const shouldPartialFill = (instrument.lotSize === 1 && quantity >= 250) || (instrument.lotSize > 1 && lots >= 5);
+  const shouldPartialFill = !isClosingExisting && ((instrument.lotSize === 1 && quantity >= 250) || (instrument.lotSize > 1 && lots >= 5));
   const fillQty = shouldPartialFill ? Math.max(instrument.lotSize, Math.floor((quantity * 0.6) / instrument.lotSize) * instrument.lotSize) : quantity;
 
   return executeFill(state, {
@@ -719,7 +719,7 @@ export function placePaperOrder(
     totalQuantity: quantity,
     fillQuantity: fillQty,
     lots,
-    baseFillPrice: isMarketableLimit && input.limitPrice ? Math.min(input.limitPrice, quote.ask) : refPrice,
+    baseFillPrice: isMarketableLimit && input.limitPrice ? (input.side === "BUY" ? Math.min(input.limitPrice, quote.ask) : Math.max(input.limitPrice, quote.bid)) : refPrice,
     now,
   });
 }
@@ -916,7 +916,7 @@ function executeFill(
     title: isPartial ? "Partial Order Execution" : "Simulated Order Executed",
     message: isPartial
       ? `Partially filled ${fillQuantity}/${totalQuantity} ${instrument.symbol} @ ₹${fillPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Remaining ${totalQuantity - fillQuantity} working in book.`
-      : `Filled ${input.side} ${fillQuantity} ${instrument.symbol} @ ₹${fillPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Est. charges ₹${charges}).`,
+      : `Filled ${input.side} ${fillQuantity} ${instrument.symbol} @ ₹${fillPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Est. charges ₹${charges.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}).`,
   });
 
   return {
@@ -1079,16 +1079,16 @@ export function processMarketTickOnAccount(
       const inst = getInstrumentById(ord.instrumentId);
       const execPrice = ord.side === "BUY" ? q.ask : q.bid;
       const addMargin = computeRequiredMargin(inst, ord.product, ord.side, execPrice, remQty);
-      if (addMargin <= next.availableCash) {
+      const addCharges = calculateIndianCharges({
+        segment: inst.segment,
+        product: ord.product,
+        side: ord.side,
+        price: execPrice,
+        quantity: remQty,
+        brokeragePlan: next.brokeragePlan,
+      }).totalCharges;
+      if (addMargin + addCharges <= next.availableCash) {
         const now = new Date().toISOString();
-        const addCharges = calculateIndianCharges({
-          segment: inst.segment,
-          product: ord.product,
-          side: ord.side,
-          price: execPrice,
-          quantity: remQty,
-          brokeragePlan: next.brokeragePlan,
-        }).totalCharges;
         next = {
           ...next,
           availableCash: round2(next.availableCash - addMargin - addCharges),
@@ -1244,7 +1244,7 @@ export function processMarketTickOnAccount(
     if (totalEquity <= next.autoRefillThreshold) {
       next = performSafeAccountRefill(next, quotes, {
         mode: "AUTO",
-        reason: `Account equity (₹${Math.round(totalEquity).toLocaleString("en-IN")}) dropped below auto-refill threshold (₹${next.autoRefillThreshold.toLocaleString("en-IN")}).`,
+        reason: `Account equity (₹${totalEquity.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) dropped below auto-refill threshold (₹${next.autoRefillThreshold.toLocaleString("en-IN")}).`,
         addAmount: DEFAULT_VIRTUAL_CAPITAL,
       });
       notifications.push(`Auto-Refill triggered: Added ₹10,00,000 while preserving all trade history.`);

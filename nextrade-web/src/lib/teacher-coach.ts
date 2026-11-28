@@ -155,7 +155,7 @@ export function evaluatePreTradeMistakes(params: {
           id: "oversized_risk",
           level: "CRITICAL",
           title: `Excessive Position Size (${riskPct.toFixed(2)}% > ${limits.maxRiskPerTradePct}% Limit)`,
-          message: `You are risking ₹${Math.round(riskAmount).toLocaleString("en-IN")} on one trade, exceeding your configured ${limits.maxRiskPerTradePct}% risk limit.`,
+          message: `You are risking ₹${riskAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on one trade, exceeding your configured ${limits.maxRiskPerTradePct}% risk limit.`,
           improvement: "Click 'Calc Qty' or 'Apply Teacher Fix' to resize safely to 1% risk.",
         });
       } else {
@@ -163,7 +163,7 @@ export function evaluatePreTradeMistakes(params: {
           id: "good_risk",
           level: "GOOD",
           title: `Disciplined Risk Sizing (${riskPct.toFixed(2)}% of Capital)`,
-          message: `Planned max loss ₹${Math.round(riskAmount).toLocaleString("en-IN")} stays within your ${limits.maxRiskPerTradePct}% risk rule.`,
+          message: `Planned max loss ₹${riskAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} stays within your ${limits.maxRiskPerTradePct}% risk rule.`,
           improvement: "Stick to this stop-loss without widening it if price pulls back.",
         });
       }

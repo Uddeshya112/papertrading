@@ -436,7 +436,7 @@ export function TradingTerminal({
               <span className="card-kicker">PAPER ORDER TICKET</span>
               <h2>{instrument.symbol}</h2>
             </div>
-            <span className="source-tag">Cash: ₹{Math.round(account.availableCash).toLocaleString("en-IN")}</span>
+            <span className="source-tag">Cash: ₹{account.availableCash.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
 
           <div className="nt-side-toggle">
