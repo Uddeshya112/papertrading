@@ -1230,3 +1230,15 @@ textarea:focus-visible {
   transform: none !important;
   max-width: 230px;
 }
+
+/* Ensure Charges breakdown inside Advanced Options & Market Depth headers never crowd */
+.nt-cost-preview > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.nt-depth-table th, .nt-depth-table td {
+  padding: 4px 6px;
+  white-space: nowrap;
+}

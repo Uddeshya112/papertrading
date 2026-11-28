@@ -165,8 +165,8 @@ export function BacktestLabView({ account, quotes }: Props) {
           </div>
           {replayBar && (
             <div className="nt-cost-preview" style={{ marginBottom: 10 }}>
-              <div><span>Open / Close</span><strong>₹{replayBar.open} → ₹{replayBar.close}</strong></div>
-              <div><span>High / Low</span><strong>₹{replayBar.high} / ₹{replayBar.low}</strong></div>
+              <div><span>Open / Close</span><strong>₹{replayBar.open.toFixed(2)} → ₹{replayBar.close.toFixed(2)}</strong></div>
+              <div><span>High / Low</span><strong>₹{replayBar.high.toFixed(2)} / ₹{replayBar.low.toFixed(2)}</strong></div>
               <div><span>Bar Volume</span><strong>{replayBar.volume.toLocaleString("en-IN")}</strong></div>
             </div>
           )}
